@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<!DOCTYPE mycat:schema SYSTEM "schema.dtd">
+<mycat:schema xmlns:mycat="http://io.mycat/">
+
+    <schema name="TESTDB" checkSQLschema="false" sqlMaxLimit="-1">
+        <table name="sbtest1" primaryKey="id" dataNode="dn01,dn02,dn03,dn04" rule="mod-long"/>
+    </schema>
+    <dataNode name="dn01" dataHost="node1" database="game_test1"/>
+    <dataNode name="dn02" dataHost="node2" database="game_test2"/>
+    <dataNode name="dn03" dataHost="node3" database="game_test3"/>
+    <dataNode name="dn04" dataHost="node4" database="game_test4"/>
+    <dataHost name="node1" maxCon="100" minCon="10" balance="0"
+              writeType="0" dbType="mysql" dbDriver="native" switchType="1" slaveThreshold="100">
+        <heartbeat>select user()</heartbeat>
+        <writeHost host="hostM1" url="127.0.0.1:3306" user="root" password="root"></writeHost>
+    </dataHost>
+    <dataHost name="node2" maxCon="100" minCon="10" balance="0"
+              writeType="0" dbType="mysql" dbDriver="native" switchType="1" slaveThreshold="100">
+        <heartbeat>select user()</heartbeat>
+        <writeHost host="hostM2" url="127.0.0.1:3306" user="root" password="root"></writeHost>
+    </dataHost>
+    <dataHost name="node3" maxCon="100" minCon="10" balance="0"
+              writeType="0" dbType="mysql" dbDriver="native" switchType="1" slaveThreshold="100">
+        <heartbeat>select user()</heartbeat>
+        <writeHost host="hostM1" url="127.0.0.1:3306" user="root" password="root"></writeHost>
+    </dataHost>
+    <dataHost name="node4" maxCon="100" minCon="10" balance="0"
+              writeType="0" dbType="mysql" dbDriver="native" switchType="1" slaveThreshold="100">
+        <heartbeat>select user()</heartbeat>
+        <writeHost host="hostM2" url="127.0.0.1:3306" user="root" password="root"></writeHost>
+    </dataHost>
+</mycat:schema>
