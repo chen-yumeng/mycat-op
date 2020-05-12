@@ -54,7 +54,6 @@
 		-->
 		<property name="useOffHeapForMerge">0</property>
 
-		<property name="MaxColumns">1000000</property>
 		<!--
 			单位为m
 		-->
