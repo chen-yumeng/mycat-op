@@ -36,48 +36,105 @@ import java.util.*;
  * @author mycat
  */
 public final class RouteResultset implements Serializable {
-    private String statement; // 原始语句
+    /**
+     * 原始语句
+     */
+    private String statement;
+    /**
+     * sql类型
+     */
     private final int sqlType;
-    private RouteResultsetNode[] nodes; // 路由结果节点
+    /**
+     * 路由结果节点
+     */
+    private RouteResultsetNode[] nodes;
+    /**
+     * 分表，1.6后功能，单node多表
+     */
     private Set<String> subTables;
+    /**
+     * 经过DruidParser解析后的语句
+     */
     private SQLStatement sqlStatement;
 
-
+    /**
+     * 含有limit的SQL的起始点和长度
+     */
     private int limitStart;
+    /**
+     * 是否可以缓存（MyCat缓存中会保存SQL(key)->RouteResultSet(value)）
+     */
     private boolean cacheAble;
-    // used to store table's ID->datanodes cache
-    // format is table.primaryKey
+    /**
+     * used to store table's ID->datanodes cache
+     * 于存储表的ID-> datanodes缓存
+     * format is table.primaryKey
+     * 格式为table.primaryKey
+     * 为了实现以后完整的主键缓存而预留
+     */
     private String primaryKey;
-    // limit output total
+    /**
+     * limit output total
+     */
     private int limitSize;
+    /**
+     * 带有合并函数的sql语句处理类
+     */
     private SQLMerge sqlMerge;
 
-    private boolean callStatement = false; // 处理call关键字
+    /**
+     * 处理call关键字
+     * 是否为调用存储过程的语句（call）
+     */
+    private boolean callStatement = false;
 
-    // 是否为全局表，只有在insert、update、delete、ddl里会判断并修改。默认不是全局表，用于修正全局表修改数据的反馈。
+    /**
+     * 是否为全局表，只有在insert、update、delete、ddl里会判断并修改。默认不是全局表，用于修正全局表修改数据的反馈。
+     */
     private boolean globalTableFlag = false;
 
-    //是否完成了路由
+    /**
+     * 是否完成了路由
+     */
     private boolean isFinishedRoute = false;
 
-    //是否自动提交，此属性主要用于记录ServerConnection上的autocommit状态
+    /**
+     * 是否自动提交，此属性主要用于记录ServerConnection上的autocommit状态
+     */
     private boolean autocommit = true;
 
-    private boolean isLoadData=false;
+    /**
+     * 是否是LoadData命令
+     */
+    private boolean isLoadData = false;
 
-    //是否可以在从库运行,此属性主要供RouteResultsetNode获取
+    /**
+     * 是否可以在从库运行,此属性主要供RouteResultsetNode获取
+     * 是否能在读节点上运行
+     */
     private Boolean canRunInReadDB;
 
-    // 强制走 master，可以通过 RouteResultset的属性canRunInReadDB=false
-    // 传给 RouteResultsetNode 来实现，但是 强制走 slave需要增加一个属性来实现:
-    private Boolean runOnSlave = null;	// 默认null表示不施加影响
+    /**
+     * 强制走 master，可以通过 RouteResultset的属性canRunInReadDB=false
+     * 传给 RouteResultsetNode 来实现，但是 强制走 slave需要增加一个属性来实现:
+     * 是否在从节点上运行
+     * 默认null表示不施加影响
+     */
+    private Boolean runOnSlave = null;
 
-    //key=dataNode    value=slot
-    private Map<String,Integer>   dataNodeSlotMap=new HashMap<>();
+    /**
+     * key=dataNode    value=slot
+     */
+    private Map<String, Integer> dataNodeSlotMap = new HashMap<>();
 
     private boolean selectForUpdate;
     private boolean autoIncrement;
     private Map<String, List<String>> subTableMaps;
+
+    /**
+     * 调用存储过程处理类
+     */
+    private Procedure procedure;
 
     public boolean isSelectForUpdate() {
         return selectForUpdate;
@@ -86,7 +143,6 @@ public final class RouteResultset implements Serializable {
     public void setSelectForUpdate(boolean selectForUpdate) {
         this.selectForUpdate = selectForUpdate;
     }
-
 
     private List<String> tables;
 
@@ -109,31 +165,28 @@ public final class RouteResultset implements Serializable {
     public Boolean getRunOnSlave() {
         return runOnSlave;
     }
+
     public String getRunOnSlaveDebugInfo() {
-        return runOnSlave == null?"default":Boolean.toString(runOnSlave);
+        return runOnSlave == null ? "default" : Boolean.toString(runOnSlave);
     }
+
     public void setRunOnSlave(Boolean runOnSlave) {
         this.runOnSlave = runOnSlave;
     }
-    private Procedure procedure;
 
-    public Procedure getProcedure()
-    {
+    public Procedure getProcedure() {
         return procedure;
     }
 
-    public void setProcedure(Procedure procedure)
-    {
+    public void setProcedure(Procedure procedure) {
         this.procedure = procedure;
     }
 
-    public boolean isLoadData()
-    {
+    public boolean isLoadData() {
         return isLoadData;
     }
 
-    public void setLoadData(boolean isLoadData)
-    {
+    public void setLoadData(boolean isLoadData) {
         this.isLoadData = isLoadData;
     }
 
@@ -169,12 +222,9 @@ public final class RouteResultset implements Serializable {
 
     public void copyLimitToNodes() {
 
-        if(nodes!=null)
-        {
-            for (RouteResultsetNode node : nodes)
-            {
-                if(node.getLimitSize()==-1&&node.getLimitStart()==0)
-                {
+        if (nodes != null) {
+            for (RouteResultsetNode node : nodes) {
+                if (node.getLimitSize() == -1 && node.getLimitStart() == 0) {
                     node.setLimitStart(limitStart);
                     node.setLimitSize(limitSize);
                 }
@@ -182,7 +232,6 @@ public final class RouteResultset implements Serializable {
 
         }
     }
-
 
     public SQLMerge getSqlMerge() {
         return sqlMerge;
@@ -242,7 +291,7 @@ public final class RouteResultset implements Serializable {
     public void setPrimaryKey(String primaryKey) {
         if (!primaryKey.contains(".")) {
             throw new java.lang.IllegalArgumentException(
-                "must be table.primarykey fomat :" + primaryKey);
+                    "must be table.primarykey fomat :" + primaryKey);
         }
         this.primaryKey = primaryKey;
     }
@@ -295,11 +344,9 @@ public final class RouteResultset implements Serializable {
     }
 
     public void setNodes(RouteResultsetNode[] nodes) {
-        if(nodes!=null)
-        {
-            int nodeSize=nodes.length;
-            for (RouteResultsetNode node : nodes)
-            {
+        if (nodes != null) {
+            int nodeSize = nodes.length;
+            for (RouteResultsetNode node : nodes) {
                 node.setTotalNodeSize(nodeSize);
             }
 
@@ -328,10 +375,8 @@ public final class RouteResultset implements Serializable {
 
     public void setCallStatement(boolean callStatement) {
         this.callStatement = callStatement;
-        if(nodes!=null)
-        {
-            for (RouteResultsetNode node : nodes)
-            {
+        if (nodes != null) {
+            for (RouteResultsetNode node : nodes) {
                 node.setCallStatement(callStatement);
             }
 
@@ -339,33 +384,27 @@ public final class RouteResultset implements Serializable {
     }
 
     public void changeNodeSqlAfterAddLimit(SchemaConfig schemaConfig, String sourceDbType, String sql, int offset, int count, boolean isNeedConvert) {
-        if (nodes != null)
-        {
+        if (nodes != null) {
 
             Map<String, String> dataNodeDbTypeMap = schemaConfig.getDataNodeDbTypeMap();
             Map<String, String> sqlMapCache = new HashMap<>();
-            for (RouteResultsetNode node : nodes)
-            {
+            for (RouteResultsetNode node : nodes) {
                 String dbType = dataNodeDbTypeMap.get(node.getName());
-                if (dbType.equalsIgnoreCase("mysql"))
-                {
+                if (dbType.equalsIgnoreCase("mysql")) {
                     node.setStatement(sql);   //mysql之前已经加好limit
-                } else if (sqlMapCache.containsKey(dbType))
-                {
+                } else if (sqlMapCache.containsKey(dbType)) {
                     node.setStatement(sqlMapCache.get(dbType));
-                } else if(isNeedConvert)
-                {
+                } else if (isNeedConvert) {
                     String nativeSql = PageSQLUtil.convertLimitToNativePageSql(dbType, sql, offset, count);
                     sqlMapCache.put(dbType, nativeSql);
                     node.setStatement(nativeSql);
-                }  else {
+                } else {
                     node.setStatement(sql);
                 }
 
                 node.setLimitStart(offset);
                 node.setLimitSize(count);
             }
-
 
         }
     }
@@ -420,8 +459,8 @@ public final class RouteResultset implements Serializable {
         return this.subTables;
     }
 
-    public boolean isDistTable(){
-        if(this.getSubTables()!=null && !this.getSubTables().isEmpty() ){
+    public boolean isDistTable() {
+        if (this.getSubTables() != null && !this.getSubTables().isEmpty()) {
             return true;
         }
         return false;

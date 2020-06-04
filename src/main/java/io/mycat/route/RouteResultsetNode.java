@@ -23,294 +23,326 @@
  */
 package io.mycat.route;
 
-import java.io.Serializable;
-import java.util.Map;
-import java.util.Set;
-
 import io.mycat.server.parser.ServerParse;
 import io.mycat.sqlengine.mpp.LoadData;
+
+import java.io.Serializable;
+import java.util.Map;
 
 /**
  * @author mycat
  */
-public final class RouteResultsetNode implements Serializable , Comparable<RouteResultsetNode> {
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
-	private final String name; // 数据节点名称
-	private String statement; // 执行的语句
-	private final String srcStatement;
-	private final int sqlType;
-	private volatile boolean canRunInReadDB;
-	private final boolean hasBlanceFlag;
-    private boolean callStatement = false; // 处理call关键字
-	private int limitStart;
-	private int limitSize;
-	private int totalNodeSize =0; //方便后续jdbc批量获取扩展
-   private Procedure procedure;
-	private LoadData loadData;
-	private RouteResultset source;
+public final class RouteResultsetNode implements Serializable, Comparable<RouteResultsetNode> {
+    /**
+     * 全局序列化类版本标识
+     */
+    private static final long serialVersionUID = 1L;
+    /**
+     * 数据节点名称
+     */
+    private final String name;
+    /**
+     * 执行的语句
+     */
+    private String statement;
+    /**
+     * 源语句
+     */
+    private final String srcStatement;
+    /**
+     * sql类型
+     */
+    private final int sqlType;
+    /**
+     * 是否可以在读节点运行
+     */
+    private volatile boolean canRunInReadDB;
+    /**
+     * 是否包含balance属性
+     */
+    private final boolean hasBlanceFlag;
+    /**
+     * 处理call关键字
+     * 是否为调用存储过程的语句（call）
+     */
+    private boolean callStatement = false;
+    private int limitStart;
+    private int limitSize;
+    /**
+     * 方便后续jdbc批量获取扩展
+     */
+    private int totalNodeSize = 0;
+    private Procedure procedure;
+    private LoadData loadData;
+    private RouteResultset source;
 
-	// 强制走 master，可以通过 RouteResultset的属性canRunInReadDB(false)
-	// 传给 RouteResultsetNode 来实现，但是 强制走 slave需要增加一个属性来实现:
-	private Boolean runOnSlave = null;	// 默认null表示不施加影响, true走slave,false走master
+    /**
+     * 强制走 master，可以通过 RouteResultset的属性canRunInReadDB=false
+     * 传给 RouteResultsetNode 来实现，但是 强制走 slave需要增加一个属性来实现:
+     * 是否在从节点上运行
+     * 默认null表示不施加影响
+     */
+    private Boolean runOnSlave = null;
 
-	private String subTableName; // 分表的表名
-	private Map<String, String> subTableNames;//分表的表名集合
+    /**
+     * 分表的表名
+     */
+    private String subTableName;
+    /**
+     * 分表的表名集合
+     */
+    private Map<String, String> subTableNames;
+    /**
+     * 注解类型和注解sql语句的map
+     */
+    private Map hintMap;
 
-	//迁移算法用     -2代表不是slot分片  ，-1代表扫描所有分片
-	private int slot=-2;
+    /**
+     * 迁移算法用     -2代表不是slot分片  ，-1代表扫描所有分片
+     */
+    private int slot = -2;
 
-	public RouteResultsetNode(String name, int sqlType, String srcStatement) {
-		this.name = name;
-		limitStart=0;
-		this.limitSize = -1;
-		this.sqlType = sqlType;
-		this.srcStatement = srcStatement;
-		this.statement = srcStatement;
-		canRunInReadDB = (sqlType == ServerParse.SELECT || sqlType == ServerParse.SHOW);
-		hasBlanceFlag = (statement != null)
-				&& statement.startsWith("/*balance*/");
-	}
+    public RouteResultsetNode(String name, int sqlType, String srcStatement) {
+        this.name = name;
+        limitStart = 0;
+        this.limitSize = -1;
+        this.sqlType = sqlType;
+        this.srcStatement = srcStatement;
+        this.statement = srcStatement;
+        canRunInReadDB = (sqlType == ServerParse.SELECT || sqlType == ServerParse.SHOW);
+        hasBlanceFlag = (statement != null)
+                && statement.startsWith("/*balance*/");
+    }
 
-	public Map<String, String> getSubTableNames() {
-      return subTableNames;
+    public Map<String, String> getSubTableNames() {
+        return subTableNames;
     }
 
     public void setSubTableNames(Map<String, String> subTableNames) {
-      this.subTableNames = subTableNames;
+        this.subTableNames = subTableNames;
     }
 
     public Boolean getRunOnSlave() {
-		return runOnSlave;
-	}
-	public String getRunOnSlaveDebugInfo() {
-		return runOnSlave == null?" default ":Boolean.toString(runOnSlave);
-	}
-	public boolean isUpdateSql() {
-		int type=sqlType;
-		return ServerParse.INSERT==type||ServerParse.UPDATE==type||ServerParse.DELETE==type||ServerParse.DDL==type;
-	}
-	public void setRunOnSlave(Boolean runOnSlave) {
-		this.runOnSlave = runOnSlave;
-	}
-	  private Map hintMap;
+        return runOnSlave;
+    }
 
-    public Map getHintMap()
-    {
+    public String getRunOnSlaveDebugInfo() {
+        return runOnSlave == null ? " default " : Boolean.toString(runOnSlave);
+    }
+
+    public boolean isUpdateSql() {
+        int type = sqlType;
+        return ServerParse.INSERT == type || ServerParse.UPDATE == type || ServerParse.DELETE == type || ServerParse.DDL == type;
+    }
+
+    public void setRunOnSlave(Boolean runOnSlave) {
+        this.runOnSlave = runOnSlave;
+    }
+
+
+    public Map getHintMap() {
         return hintMap;
     }
 
-    public void setHintMap(Map hintMap)
-    {
+    public void setHintMap(Map hintMap) {
         this.hintMap = hintMap;
     }
 
-	public void setStatement(String statement) {
-		this.statement = statement;
-	}
+    public void setStatement(String statement) {
+        this.statement = statement;
+    }
 
-	public void setCanRunInReadDB(boolean canRunInReadDB) {
-		this.canRunInReadDB = canRunInReadDB;
-	}
+    public void setCanRunInReadDB(boolean canRunInReadDB) {
+        this.canRunInReadDB = canRunInReadDB;
+    }
 
-	public boolean getCanRunInReadDB() {
-		return this.canRunInReadDB;
-	}
+    public boolean getCanRunInReadDB() {
+        return this.canRunInReadDB;
+    }
 
-	public void resetStatement() {
-		this.statement = srcStatement;
-	}
+    public void resetStatement() {
+        this.statement = srcStatement;
+    }
 
-	/**
-	 * 这里的逻辑是为了优化，实现：非业务sql可以在负载均衡走slave的效果。因为业务sql一般是非自动提交，
-	 * 而非业务sql一般默认是自动提交，比如mysql client，还有SQLJob, heartbeat都可以使用
-	 * 了Leader-us优化的query函数，该函数实现为自动提交；
-	 *
-	 * 在非自动提交的情况下(有事物)，除非使用了  balance 注解的情况下，才可以走slave.
-	 *
-	 * 当然还有一个大前提，必须是 select 或者 show 语句(canRunInReadDB=true)
-	 * @param autocommit
-	 * @return
-	 */
-	public boolean canRunnINReadDB(boolean autocommit) {
-		return canRunInReadDB && ( autocommit || (!autocommit && hasBlanceFlag) );
-	}
+    /**
+     * 这里的逻辑是为了优化，实现：非业务sql可以在负载均衡走slave的效果。因为业务sql一般是非自动提交，
+     * 而非业务sql一般默认是自动提交，比如mysql client，还有SQLJob, heartbeat都可以使用
+     * 了Leader-us优化的query函数，该函数实现为自动提交；
+     * <p>
+     * 在非自动提交的情况下(有事物)，除非使用了  balance 注解的情况下，才可以走slave.
+     * <p>
+     * 当然还有一个大前提，必须是 select 或者 show 语句(canRunInReadDB=true)
+     *
+     * @param autocommit
+     * @return
+     */
+    public boolean canRunnINReadDB(boolean autocommit) {
+        return canRunInReadDB && (autocommit || (!autocommit && hasBlanceFlag));
+    }
 
-//	public boolean canRunnINReadDB(boolean autocommit) {
+    //	public boolean canRunnINReadDB(boolean autocommit) {
 //		return canRunInReadDB && autocommit && !hasBlanceFlag
 //			|| canRunInReadDB && !autocommit && hasBlanceFlag;
 //	}
-  public Procedure getProcedure()
-    {
+    public Procedure getProcedure() {
         return procedure;
     }
 
-	public int getSlot() {
-		return slot;
-	}
+    public int getSlot() {
+        return slot;
+    }
 
-	public void setSlot(int slot) {
-		this.slot = slot;
-	}
+    public void setSlot(int slot) {
+        this.slot = slot;
+    }
 
-	public void setProcedure(Procedure procedure)
-    {
+    public void setProcedure(Procedure procedure) {
         this.procedure = procedure;
     }
 
-    public boolean isCallStatement()
-    {
+    public boolean isCallStatement() {
         return callStatement;
     }
 
-    public void setCallStatement(boolean callStatement)
-    {
+    public void setCallStatement(boolean callStatement) {
         this.callStatement = callStatement;
     }
-	public String getName() {
-		return name;
-	}
 
-	public int getSqlType() {
-		return sqlType;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public String getStatement() {
-		return statement;
-	}
+    public int getSqlType() {
+        return sqlType;
+    }
 
-	public int getLimitStart()
-	{
-		return limitStart;
-	}
+    public String getStatement() {
+        return statement;
+    }
 
-	public void setLimitStart(int limitStart)
-	{
-		this.limitStart = limitStart;
-	}
+    public int getLimitStart() {
+        return limitStart;
+    }
 
-	public int getLimitSize()
-	{
-		return limitSize;
-	}
+    public void setLimitStart(int limitStart) {
+        this.limitStart = limitStart;
+    }
 
-	public void setLimitSize(int limitSize)
-	{
-		this.limitSize = limitSize;
-	}
+    public int getLimitSize() {
+        return limitSize;
+    }
 
-	public int getTotalNodeSize()
-	{
-		return totalNodeSize;
-	}
+    public void setLimitSize(int limitSize) {
+        this.limitSize = limitSize;
+    }
 
-	public void setTotalNodeSize(int totalNodeSize)
-	{
-		this.totalNodeSize = totalNodeSize;
-	}
+    public int getTotalNodeSize() {
+        return totalNodeSize;
+    }
 
-	public LoadData getLoadData()
-	{
-		return loadData;
-	}
+    public void setTotalNodeSize(int totalNodeSize) {
+        this.totalNodeSize = totalNodeSize;
+    }
 
-	public void setLoadData(LoadData loadData)
-	{
-		this.loadData = loadData;
-	}
+    public LoadData getLoadData() {
+        return loadData;
+    }
 
-	@Override
-	public int hashCode() {
-		return name.hashCode();
-	}
+    public void setLoadData(LoadData loadData) {
+        this.loadData = loadData;
+    }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (obj instanceof RouteResultsetNode) {
-			RouteResultsetNode rrn = (RouteResultsetNode) obj;
-			if(subTableName!=null){
-				if (equals(name, rrn.getName()) && equals(subTableName, rrn.getSubTableName())) {
-					return true;
-				}
-			}else{
-				if (equals(name, rrn.getName())) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
+    @Override
+    public int hashCode() {
+        return name.hashCode();
+    }
 
-	@Override
-	public String toString() {
-		StringBuilder s = new StringBuilder();
-		s.append(name);
-		s.append('{').append(statement).append('}');
-		return s.toString();
-	}
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof RouteResultsetNode) {
+            RouteResultsetNode rrn = (RouteResultsetNode) obj;
+            if (subTableName != null) {
+                if (equals(name, rrn.getName()) && equals(subTableName, rrn.getSubTableName())) {
+                    return true;
+                }
+            } else {
+                if (equals(name, rrn.getName())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
-	private static boolean equals(String str1, String str2) {
-		if (str1 == null) {
-			return str2 == null;
-		}
-		return str1.equals(str2);
-	}
+    @Override
+    public String toString() {
+        StringBuilder s = new StringBuilder();
+        s.append(name);
+        s.append('{').append(statement).append('}');
+        return s.toString();
+    }
 
-	public String getSubTableName() {
-		return this.subTableName;
-	}
+    private static boolean equals(String str1, String str2) {
+        if (str1 == null) {
+            return str2 == null;
+        }
+        return str1.equals(str2);
+    }
 
-	public void setSubTableName(String subTableName) {
-		this.subTableName = subTableName;
-	}
+    public String getSubTableName() {
+        return this.subTableName;
+    }
 
-	public boolean isModifySQL() {
-		return !canRunInReadDB;
-	}
-	public boolean isDisctTable() {
-		if(subTableName!=null && !subTableName.equals("")){
-			return true;
-		};
-		return false;
-	}
+    public void setSubTableName(String subTableName) {
+        this.subTableName = subTableName;
+    }
 
+    public boolean isModifySQL() {
+        return !canRunInReadDB;
+    }
 
-	@Override
-	public int compareTo(RouteResultsetNode obj) {
-		if(obj == null) {
-			return 1;
-		}
-		if(this.name == null) {
-			return -1;
-		}
-		if(obj.name == null) {
-			return 1;
-		}
-		int c = this.name.compareTo(obj.name);
-		if(!this.isDisctTable()||obj.subTableName == null){
-			return c;
-		}else{
-			if(c==0){
-				return this.subTableName.compareTo(obj.subTableName);
-			}
-			return c;
-		}
-	}
+    public boolean isDisctTable() {
+        if (subTableName != null && !subTableName.equals("")) {
+            return true;
+        }
+        ;
+        return false;
+    }
 
-	public boolean isHasBlanceFlag() {
-		return hasBlanceFlag;
-	}
+    @Override
+    public int compareTo(RouteResultsetNode obj) {
+        if (obj == null) {
+            return 1;
+        }
+        if (this.name == null) {
+            return -1;
+        }
+        if (obj.name == null) {
+            return 1;
+        }
+        int c = this.name.compareTo(obj.name);
+        if (!this.isDisctTable() || obj.subTableName == null) {
+            return c;
+        } else {
+            if (c == 0) {
+                return this.subTableName.compareTo(obj.subTableName);
+            }
+            return c;
+        }
+    }
 
-	public RouteResultset getSource() {
-		return source;
-	}
+    public boolean isHasBlanceFlag() {
+        return hasBlanceFlag;
+    }
 
-	public void setSource(RouteResultset source) {
-		this.source = source;
-	}
+    public RouteResultset getSource() {
+        return source;
+    }
+
+    public void setSource(RouteResultset source) {
+        this.source = source;
+    }
 }

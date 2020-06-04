@@ -31,9 +31,9 @@ public abstract class CachePoolFactory {
 
 	/**
 	 *  create a cache pool instance
-	 * @param poolName
-	 * @param cacheSize
-	 * @param expireSeconds -1 for not expired
+	 * @param poolName 名称
+	 * @param cacheSize 大小
+	 * @param expireSeconds -1 for not expired 失效时间秒
 	 * @return
 	 */
 	public abstract CachePool createCachePool(String poolName,int cacheSize,int expireSeconds);

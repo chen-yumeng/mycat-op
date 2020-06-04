@@ -23,12 +23,6 @@
  */
 package io.mycat.server.handler;
 
-import com.alibaba.druid.sql.ast.SQLStatement;
-import com.alibaba.druid.sql.ast.statement.SQLSelect;
-import com.alibaba.druid.sql.ast.statement.SQLSelectStatement;
-import com.alibaba.druid.sql.parser.SQLParserUtils;
-import com.alibaba.druid.sql.parser.SQLStatementParser;
-import com.alibaba.druid.util.JdbcUtils;
 import com.google.common.escape.Escaper;
 import com.google.common.escape.Escapers;
 import com.google.common.escape.Escapers.Builder;
@@ -114,7 +108,7 @@ public class ServerPrepareHandler implements FrontendPrepareHandler {
         LongDataPacket packet = new LongDataPacket();
         packet.read(data);
         long pstmtId = packet.getPstmtId();
-        LOGGER.info("preparestatement  long data id:{}", pstmtId);
+        LOGGER.info("preparestatement long data id:{}", pstmtId);
         PreparedStatement pstmt = pstmtForId.get(pstmtId);
         if (pstmt != null) {
             if (LOGGER.isDebugEnabled()) {
@@ -176,10 +170,10 @@ public class ServerPrepareHandler implements FrontendPrepareHandler {
         }
     }
 
-
     @Override
     public void close(byte[] data) {
-        long pstmtId = ByteUtil.readUB4(data, 5); // 获取prepare stmt id
+        // 获取prepare stmt id
+        long pstmtId = ByteUtil.readUB4(data, 5);
         LOGGER.info("preparestatement  close id:{}", pstmtId);
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("close prepare stmt, stmtId = " + pstmtId);
@@ -189,13 +183,13 @@ public class ServerPrepareHandler implements FrontendPrepareHandler {
 
     @Override
     public void clear() {
-        this.pstmtForId.clear();
+        pstmtForId.clear();
 //    this.pstmtForSql.clear();
     }
 
-
-
-    // 获取预处理sql中预处理参数个数
+    /**
+     * 获取预处理sql中预处理参数个数
+     */
     private int getParamCount(String sql) {
         char[] cArr = sql.toCharArray();
         int count = 0;

@@ -2,8 +2,8 @@
  * Copyright (c) 2013, OpenCloudDB/MyCAT and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software;Designed and Developed mainly by many Chinese 
- * opensource volunteers. you can redistribute it and/or modify it under the 
+ * This code is free software;Designed and Developed mainly by many Chinese
+ * opensource volunteers. you can redistribute it and/or modify it under the
  * terms of the GNU General Public License version 2 only, as published by the
  * Free Software Foundation.
  *
@@ -16,8 +16,8 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- * 
- * Any questions about this component can be directed to it's project Web address 
+ *
+ * Any questions about this component can be directed to it's project Web address
  * https://code.google.com/p/opencloudb/.
  *
  */
@@ -136,16 +136,16 @@ public class MySQLMessage {
     public long readLength() {
         int length = data[position++] & 0xff;
         switch (length) {
-        case 251:
-            return NULL_LENGTH;
-        case 252:
-            return readUB2();
-        case 253:
-            return readUB3();
-        case 254:
-            return readLong();
-        default:
-            return length;
+            case 251:
+                return NULL_LENGTH;
+            case 252:
+                return readUB2();
+            case 253:
+                return readUB3();
+            case 254:
+                return readLong();
+            default:
+                return length;
         }
     }
 
@@ -158,8 +158,6 @@ public class MySQLMessage {
         position = length;
         return ab;
     }
-
-
 
     public byte[] readBytes(int length) {
         byte[] ab = new byte[length];
@@ -181,44 +179,42 @@ public class MySQLMessage {
             }
         }
         switch (offset) {
-        case -1:
-            byte[] ab1 = new byte[length - position];
-            System.arraycopy(b, position, ab1, 0, ab1.length);
-            position = length;
-            return ab1;
-        case 0:
-            position++;
-            return EMPTY_BYTES;
-        default:
-            byte[] ab2 = new byte[offset - position];
-            System.arraycopy(b, position, ab2, 0, ab2.length);
-            position = offset + 1;
-            return ab2;
+            case -1:
+                byte[] ab1 = new byte[length - position];
+                System.arraycopy(b, position, ab1, 0, ab1.length);
+                position = length;
+                return ab1;
+            case 0:
+                position++;
+                return EMPTY_BYTES;
+            default:
+                byte[] ab2 = new byte[offset - position];
+                System.arraycopy(b, position, ab2, 0, ab2.length);
+                position = offset + 1;
+                return ab2;
         }
     }
-    
+
     public int getRowLength(int fileldCount) {
-    	int size = 0;
-    	int bak_position = position;
-    	position += 4;
-    	for(int i = 0 ; i < fileldCount; i++) {
+        int size = 0;
+        int bak_position = position;
+        position += 4;
+        for (int i = 0; i < fileldCount; i++) {
             int length = (int) readLength();
-            if(length == NULL_LENGTH || length <= 0)
-            {
-            	continue;
+            if (length == NULL_LENGTH || length <= 0) {
+                continue;
             }
 
             position += length;
             size += length;
-    	}
-    	position = bak_position;
-    	return size;
+        }
+        position = bak_position;
+        return size;
     }
-    
+
     public byte[] readBytesWithLength() {
         int length = (int) readLength();
-        if(length==NULL_LENGTH)
-        {
+        if (length == NULL_LENGTH) {
             return null;
         }
         if (length <= 0) {
@@ -244,7 +240,7 @@ public class MySQLMessage {
         if (position >= length) {
             return null;
         }
-        
+
         String s = new String(data, position, length - position, charset);
         position = length;
         return s;
@@ -290,17 +286,17 @@ public class MySQLMessage {
             }
         }
         switch (offset) {
-        case -1:
-            String s1 = new String(b, position, length - position, charset);
-            position = length;
-            return s1;
-        case 0:
-            position++;
-            return null;
-        default:
-            String s2 = new String(b, position, offset - position, charset);
-            position = offset + 1;
-            return s2;
+            case -1:
+                String s1 = new String(b, position, length - position, charset);
+                position = length;
+                return s1;
+            case 0:
+                position++;
+                return null;
+            default:
+                String s2 = new String(b, position, offset - position, charset);
+                position = offset + 1;
+                return s2;
         }
     }
 

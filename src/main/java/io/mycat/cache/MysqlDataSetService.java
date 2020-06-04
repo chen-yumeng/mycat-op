@@ -28,13 +28,29 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * 数据结果集缓存服务类
+ */
 public class MysqlDataSetService {
+	/**
+	 * 是否启用
+	 */
 	private volatile boolean enabled = false;
-	// max expire time is 300 seconds
+	/**
+	 * max expire time is 300 seconds
+	 * 最大过期时间为300秒
+	 */
 	private int maxExpire = 300;
 	private final ConcurrentHashMap<String, MysqlDataSetCache> cachedMap = new ConcurrentHashMap<String, MysqlDataSetCache>();
+	/**
+	 * 需要缓存的SQL
+	 */
 	private volatile Set<String> needCachedSQL = new HashSet<String>();
 
+	/**
+	 * 是否启用
+	 * @return
+	 */
 	public boolean isEnabled() {
 		return enabled;
 	}
@@ -62,7 +78,9 @@ public class MysqlDataSetService {
 	}
 
 	/**
+	 * 查找数据集缓存
 	 * sql should not include LIMIT range
+	 * sql不应包含LIMIT范围
 	 * 
 	 * @param sql
 	 * @return
@@ -90,10 +108,14 @@ public class MysqlDataSetService {
 		return (cachedMap.putIfAbsent(newCache.getSql(), newCache) == null);
 	}
 
+	/**
+	 * 是否为有效缓存
+	 * @param cache
+	 * @return
+	 */
 	private boolean validCache(MysqlDataSetCache cache) {
 		return (!cache.isStoring()
-				&& (cache.getCreateTime() + this.maxExpire * 1000 < System
-						.currentTimeMillis()) && (new File(cache.getDataFile())
-				.exists()));
+				&& (cache.getCreateTime() + this.maxExpire * 1000 < System.currentTimeMillis())
+				&& (new File(cache.getDataFile()).exists()));
 	}
 }

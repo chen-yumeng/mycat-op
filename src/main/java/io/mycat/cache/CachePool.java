@@ -2,8 +2,8 @@
  * Copyright (c) 2013, OpenCloudDB/MyCAT and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software;Designed and Developed mainly by many Chinese 
- * opensource volunteers. you can redistribute it and/or modify it under the 
+ * This code is free software;Designed and Developed mainly by many Chinese
+ * opensource volunteers. you can redistribute it and/or modify it under the
  * terms of the GNU General Public License version 2 only, as published by the
  * Free Software Foundation.
  *
@@ -16,8 +16,8 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- * 
- * Any questions about this component can be directed to it's project Web address 
+ *
+ * Any questions about this component can be directed to it's project Web address
  * https://code.google.com/p/opencloudb/.
  *
  */
@@ -25,20 +25,46 @@ package io.mycat.cache;
 
 /**
  * simple cache pool for implement
- * 
+ *
  * @author wuzhih
- * 
  */
 public interface CachePool {
 
-	public void putIfAbsent(Object key, Object value);
+    /**
+     * 放入缓存前先用 get 方法判断是否存在
+     * @param key
+     * @param value
+     */
+    public void putIfAbsent(Object key, Object value);
 
-	public Object get(Object key);
+    /**
+     * 判断缓存的 key 是否存在
+     *
+     * @param key
+     * @return
+     */
+    public Object get(Object key);
 
-	public void clearCache();
+    /**
+     * 清理缓存
+     */
+    public void clearCache();
 
-	public CacheStatic getCacheStatic();
+    /**
+     * 缓存状态信息
+     * @return
+     */
+    public CacheStatic getCacheStatic();
 
-	public long getMaxSize();
-	public void clearCache(String cacheName);
+    /**
+     * 最大缓存大小
+     * @return
+     */
+    public long getMaxSize();
+
+    /**
+     * 通过缓存名字清理缓存
+     * @param cacheName
+     */
+    public void clearCache(String cacheName);
 }
