@@ -2,8 +2,8 @@
  * Copyright (c) 2013, OpenCloudDB/MyCAT and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software;Designed and Developed mainly by many Chinese 
- * opensource volunteers. you can redistribute it and/or modify it under the 
+ * This code is free software;Designed and Developed mainly by many Chinese
+ * opensource volunteers. you can redistribute it and/or modify it under the
  * terms of the GNU General Public License version 2 only, as published by the
  * Free Software Foundation.
  *
@@ -16,16 +16,16 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- * 
- * Any questions about this component can be directed to it's project Web address 
+ *
+ * Any questions about this component can be directed to it's project Web address
  * https://code.google.com/p/opencloudb/.
  *
  */
 package io.mycat.backend.mysql.nio.handler;
 
-import java.util.List;
-
 import io.mycat.backend.BackendConnection;
+
+import java.util.List;
 
 /**
  * @author mycat
@@ -42,6 +42,7 @@ public class DelegateResponseHandler implements ResponseHandler {
 
     @Override
     public void connectionAcquired(BackendConnection conn) {
+        //将后端连接的ResponseHandler设置为target
         target.connectionAcquired(conn);
     }
 
@@ -75,16 +76,12 @@ public class DelegateResponseHandler implements ResponseHandler {
         target.rowEofResponse(eof, conn);
     }
 
-	@Override
-	public void writeQueueAvailable() {
-		target.writeQueueAvailable();
-		
-	}
+    @Override
+    public void writeQueueAvailable() { target.writeQueueAvailable(); }
 
-	@Override
-	public void connectionClose(BackendConnection conn, String reason) {
-		target.connectionClose(conn, reason);
-	}
+    @Override
+    public void connectionClose(BackendConnection conn, String reason) {
+        target.connectionClose(conn, reason);
+    }
 
-	
 }
