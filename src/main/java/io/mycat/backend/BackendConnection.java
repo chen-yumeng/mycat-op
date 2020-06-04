@@ -1,72 +1,81 @@
 package io.mycat.backend;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-
 import io.mycat.backend.mysql.nio.handler.ResponseHandler;
 import io.mycat.net.ClosableConnection;
 import io.mycat.route.RouteResultsetNode;
 import io.mycat.server.ServerConnection;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+
 public interface BackendConnection extends ClosableConnection {
-	public boolean isModifiedSQLExecuted();
+    boolean isModifiedSQLExecuted();
 
-	public boolean isFromSlaveDB();
+    boolean isFromSlaveDB();
 
-	public String getSchema();
+    String getSchema();
 
-	public void setSchema(String newSchema);
+    void setSchema(String newSchema);
 
-	public long getLastTime();
+    long getLastTime();
 
-	public boolean isClosedOrQuit();
+    boolean isClosedOrQuit();
 
-	public void setAttachment(Object attachment);
+    void setAttachment(Object attachment);
 
-	public void quit();
+    void quit();
 
-	public void setLastTime(long currentTimeMillis);
+    void setLastTime(long currentTimeMillis);
 
-	public void release();
+    void release();
 
-	public boolean setResponseHandler(ResponseHandler commandHandler);
+    boolean setResponseHandler(ResponseHandler commandHandler);
 
-	public void commit();
+    void commit();
 
-	public void query(String sql) throws UnsupportedEncodingException;
+    void query(String sql) throws UnsupportedEncodingException;
 
-	public Object getAttachment();
+    Object getAttachment();
 
-	// public long getThreadId();
+    // public long getThreadId();
 
+    void execute(RouteResultsetNode node, ServerConnection source,
+                        boolean autocommit) throws IOException;
 
+    void recordSql(String host, String schema, String statement);
 
-	public void execute(RouteResultsetNode node, ServerConnection source,
-			boolean autocommit) throws IOException;
+    boolean syncAndExcute();
 
-	public void recordSql(String host, String schema, String statement);
+    void rollback();
 
-	public boolean syncAndExcute();
+    boolean isBorrowed();
 
-	public void rollback();
+    void setBorrowed(boolean borrowed);
 
-	public boolean isBorrowed();
+    int getTxIsolation();
 
-	public void setBorrowed(boolean borrowed);
+    boolean isAutocommit();
 
-	public int getTxIsolation();
+    boolean isTxReadonly();
 
-	public boolean isAutocommit();
+    int getSqlSelectLimit();
 
-	public boolean isTxReadonly();
-	public int getSqlSelectLimit();
+    long getId();
 
-	public long getId();
+    void discardClose(String reason);
 
-	public void discardClose(String reason);
+    void query(String sql, int charsetIndex);
 
-	public void query(String sql, int charsetIndex);
+    boolean checkAlive();
 
-	public boolean checkAlive();
+    /**
+     * 停止读取
+     */
+    void disableRead();
+
+    /**
+     * 启用读取
+     */
+    void enableRead();
 
 }

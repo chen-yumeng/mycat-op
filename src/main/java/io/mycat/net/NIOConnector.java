@@ -23,6 +23,11 @@
  */
 package io.mycat.net;
 
+import io.mycat.MycatServer;
+import io.mycat.util.SelectorUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
@@ -31,16 +36,10 @@ import java.nio.channels.SocketChannel;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import io.mycat.MycatServer;
 import java.util.concurrent.atomic.AtomicLong;
 
-import io.mycat.util.SelectorUtil;
-
 /**
+ * 作为客户端去连接后台数据库（MySql，后端NIO通信）
  * @author mycat
  */
 public final class NIOConnector extends Thread implements SocketConnector {
@@ -80,6 +79,7 @@ public final class NIOConnector extends Thread implements SocketConnector {
 				++connectCount;
 
 				long start = System.nanoTime();
+				//查看有无连接就绪
 				tSelector.select(1000L);
 				long end = System.nanoTime();
 				connect(tSelector);
@@ -126,48 +126,52 @@ public final class NIOConnector extends Thread implements SocketConnector {
 	}
 
 	private void connect(Selector selector) {
-		AbstractConnection c = null;
-		while ((c = connectQueue.poll()) != null) {
+		AbstractConnection abstractConnection = null;
+		while ((abstractConnection = connectQueue.poll()) != null) {
 			try {
-				SocketChannel channel = (SocketChannel) c.getChannel();
-				channel.register(selector, SelectionKey.OP_CONNECT, c);
-				channel.connect(new InetSocketAddress(c.host, c.port));
-
+				SocketChannel channel = (SocketChannel) abstractConnection.getChannel();
+				//注册OP_CONNECT监听与后端连接是否真正建立
+				channel.register(selector, SelectionKey.OP_CONNECT, abstractConnection);
+				//主动连接
+				channel.connect(new InetSocketAddress(abstractConnection.host, abstractConnection.port));
 			} catch (Exception e) {
 				LOGGER.error("error:",e);
-				c.close(e.toString());
+				abstractConnection.close(e.toString());
 			}
 		}
 	}
 
 	private void finishConnect(SelectionKey key, Object att) {
-		BackendAIOConnection c = (BackendAIOConnection) att;
+		BackendAIOConnection aioConnection = (BackendAIOConnection) att;
 		try {
-			if (finishConnect(c, (SocketChannel) c.channel)) {
+			//做原生NIO连接是否完成的判断和操作
+			if (finishConnect(aioConnection, (SocketChannel) aioConnection.channel)) {
 				clearSelectionKey(key);
-				c.setId(ID_GENERATOR.getId());
-				NIOProcessor processor = MycatServer.getInstance()
-						.nextProcessor();
-				c.setProcessor(processor);
+				aioConnection.setId(ID_GENERATOR.getId());
+				//绑定特定的NIOProcessor以作idle清理
+				NIOProcessor processor = MycatServer.getInstance().nextProcessor();
+				aioConnection.setProcessor(processor);
+				//与特定NIOReactor绑定监听读写
 				NIOReactor reactor = reactorPool.getNextReactor();
-				reactor.postRegister(c);
-				c.onConnectfinish();
+				reactor.postRegister(aioConnection);
+				aioConnection.onConnectfinish();
 			}
 		} catch (Exception e) {
+			//如有异常，将key清空
 			clearSelectionKey(key);
 			LOGGER.error("error:",e);
-			c.close(e.toString());
-			c.onConnectFailed(e);
+			aioConnection.close(e.toString());
+			aioConnection.onConnectFailed(e);
 
 		}
 	}
 
-	private boolean finishConnect(AbstractConnection c, SocketChannel channel)
+	private boolean finishConnect(AbstractConnection abstractConnection, SocketChannel channel)
 			throws IOException {
-		if (channel.finishConnect()) {
+		if (channel.isConnectionPending()) {
 			channel.finishConnect();
 
-			c.setLocalPort(channel.socket().getLocalPort());
+			abstractConnection.setLocalPort(channel.socket().getLocalPort());
 			return true;
 		} else {
 			return false;

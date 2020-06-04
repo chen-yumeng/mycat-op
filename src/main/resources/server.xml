@@ -29,9 +29,9 @@
       <!--  <property name="useCompression">1</property>--> <!--1为开启mysql压缩协议-->
         <!--  <property name="fakeMySQLVersion">5.6.20</property>--> <!--设置模拟的MySQL版本号-->
 	<!-- <property name="processorBufferChunk">40960</property> -->
-	<!-- 
-	<property name="processors">1</property> 
-	<property name="processorExecutor">32</property> 
+	<!--
+	<property name="processors">1</property>
+	<property name="processorExecutor">32</property>
 	 -->
         <!--默认为type 0: DirectByteBufferPool | type 1 ByteBufferArena | type 2 NettyBufferPool -->
 		<property name="processorBufferPoolType">0</property>
@@ -48,6 +48,12 @@
 			<property name="frontWriteQueueSize">4096</property> <property name="processors">32</property> -->
 		<!--分布式事务开关，0为不过滤分布式事务，1为过滤分布式事务（如果分布式事务内只涉及全局表，则不过滤），2为不过滤分布式事务,但是记录分布式事务日志-->
 		<property name="handleDistributedTransactions">0</property>
+        <!--是否开启流式查询控制，默认不开启-->
+		<property name="enableFlowControl">true</property>
+        <!--流式查询控制启动的写队列最大值，默认1000，建议值为-->
+		<property name="flowControlStartThreshold">1000</property>
+        <!--流式查询控制关闭的写队列最大值，默认256-->
+		<property name="flowControlStopThreshold">256</property>
 		
 			<!--
 			off heap for merge/order/group/limit      1开启   0关闭
@@ -120,8 +126,8 @@
 		 -->
 <!--	</user>-->
 
-	<user name="mycat">
-		<property name="password">mycat</property>
+	<user name="user">
+		<property name="password">123456</property>
 		<property name="schemas">TESTDB</property>
 		<property name="readOnly">false</property>
 	</user>

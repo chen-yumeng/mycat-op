@@ -23,6 +23,12 @@
  */
 package io.mycat.net;
 
+import io.mycat.MycatServer;
+import io.mycat.net.factory.FrontendConnectionFactory;
+import io.mycat.util.SelectorUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -33,13 +39,9 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Set;
 
-import io.mycat.util.SelectorUtil;
-import org.slf4j.Logger; import org.slf4j.LoggerFactory;
-
-import io.mycat.MycatServer;
-import io.mycat.net.factory.FrontendConnectionFactory;
-
 /**
+ *
+ * 作为服务器接受客户端连接（前端NIO通信）
  * @author mycat
  */
 public final class NIOAcceptor extends Thread implements SocketAcceptor{
@@ -66,11 +68,15 @@ public final class NIOAcceptor extends Thread implements SocketAcceptor{
 		serverChannel.setOption(StandardSocketOptions.SO_RCVBUF, 1024 * 16 * 2);
 		// backlog=100
 		serverChannel.bind(new InetSocketAddress(bindIp, port), 100);
+		//注册OP_ACCEPT，监听客户端连接
 		this.serverChannel.register(selector, SelectionKey.OP_ACCEPT);
+		//FrontendConnectionFactory,用来封装channel成为FrontendConnection
 		this.factory = factory;
+		//NIOReactor池
 		this.reactorPool = reactorPool;
 	}
 
+	@Override
 	public int getPort() {
 		return port;
 	}
@@ -88,6 +94,7 @@ public final class NIOAcceptor extends Thread implements SocketAcceptor{
 				++acceptCount;
 
 				long start = System.nanoTime();
+				//轮询发现新连接请求
 			    tSelector.select(1000L);
 				long end = System.nanoTime();
 				Set<SelectionKey> keys = tSelector.selectedKeys();
@@ -100,6 +107,7 @@ public final class NIOAcceptor extends Thread implements SocketAcceptor{
 					try {
 						for (SelectionKey key : keys) {
 							if (key.isValid() && key.isAcceptable()) {
+								//接受连接操作
 								accept();
 							} else {
 								key.cancel();
@@ -130,17 +138,19 @@ public final class NIOAcceptor extends Thread implements SocketAcceptor{
 	private void accept() {
 		SocketChannel channel = null;
 		try {
+			//得到通信channel并设置为非阻塞
 			channel = serverChannel.accept();
 			channel.configureBlocking(false);
-			FrontendConnection c = factory.make(channel);
-			c.setAccepted(true);
-			c.setId(ID_GENERATOR.getId());
-			NIOProcessor processor = (NIOProcessor) MycatServer.getInstance()
-					.nextProcessor();
-			c.setProcessor(processor);
-			
+			//封装channel为FrontendConnection
+			FrontendConnection frontendConnection = factory.make(channel);
+			frontendConnection.setAccepted(true);
+			frontendConnection.setId(ID_GENERATOR.getId());
+			//利用NIOProcessor管理前端链接，定期清除空闲连接，同时做写队列检查
+			NIOProcessor processor = (NIOProcessor) MycatServer.getInstance().nextProcessor();
+			frontendConnection.setProcessor(processor);
+			//和具体执行selector响应感兴趣事件的NIOReactor绑定
 			NIOReactor reactor = reactorPool.getNextReactor();
-			reactor.postRegister(c);
+			reactor.postRegister(frontendConnection);
 
 		} catch (Exception e) {
 	        LOGGER.warn(getName(), e);

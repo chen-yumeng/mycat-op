@@ -23,33 +23,6 @@
  */
 package io.mycat;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.channels.AsynchronousChannelGroup;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.recipes.locks.InterProcessMutex;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.io.Files;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -59,11 +32,7 @@ import io.mycat.backend.datasource.PhysicalDBPool;
 import io.mycat.backend.datasource.PhysicalDatasource;
 import io.mycat.backend.heartbeat.zkprocess.MycatLeaderLatch;
 import io.mycat.backend.mysql.nio.handler.MultiNodeCoordinator;
-import io.mycat.backend.mysql.xa.CoordinatorLogEntry;
-import io.mycat.backend.mysql.xa.ParticipantLogEntry;
-import io.mycat.backend.mysql.xa.TxState;
-import io.mycat.backend.mysql.xa.XACommitCallback;
-import io.mycat.backend.mysql.xa.XARollbackCallback;
+import io.mycat.backend.mysql.xa.*;
 import io.mycat.backend.mysql.xa.recovery.Repository;
 import io.mycat.backend.mysql.xa.recovery.impl.FileSystemRepository;
 import io.mycat.buffer.BufferPool;
@@ -80,14 +49,7 @@ import io.mycat.config.model.TableConfig;
 import io.mycat.config.table.structure.MySQLTableStructureDetector;
 import io.mycat.manager.ManagerConnectionFactory;
 import io.mycat.memory.MyCatMemory;
-import io.mycat.net.AIOAcceptor;
-import io.mycat.net.AIOConnector;
-import io.mycat.net.NIOAcceptor;
-import io.mycat.net.NIOConnector;
-import io.mycat.net.NIOProcessor;
-import io.mycat.net.NIOReactorPool;
-import io.mycat.net.SocketAcceptor;
-import io.mycat.net.SocketConnector;
+import io.mycat.net.*;
 import io.mycat.route.MyCATSequnceProcessor;
 import io.mycat.route.RouteService;
 import io.mycat.route.factory.RouteStrategyFactory;
@@ -97,6 +59,7 @@ import io.mycat.server.interceptor.SQLInterceptor;
 import io.mycat.server.interceptor.impl.GlobalTableUtil;
 import io.mycat.sqlengine.OneRawSQLQueryResultHandler;
 import io.mycat.sqlengine.SQLJob;
+import io.mycat.sqlengine.WriteQueueFlowController;
 import io.mycat.statistic.SQLRecorder;
 import io.mycat.statistic.stat.SqlResultSizeRecorder;
 import io.mycat.statistic.stat.UserStat;
@@ -105,6 +68,20 @@ import io.mycat.util.ExecutorUtil;
 import io.mycat.util.NameableExecutor;
 import io.mycat.util.TimeUtil;
 import io.mycat.util.ZKUtils;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.locks.InterProcessMutex;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.channels.AsynchronousChannelGroup;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author mycat
@@ -312,11 +289,10 @@ public class MycatServer {
     public void beforeStart() {
         String home = SystemConfig.getHomePath();
 
-
         //ZkConfig.instance().initZk();
     }
 
-    public void startup() throws IOException {
+    public void startup() throws Exception {
 
         SystemConfig system = config.getSystem();
         int processorCount = system.getProcessors();
@@ -339,6 +315,9 @@ public class MycatServer {
                 + system.getBufferPoolPageNumber();
         LOGGER.info(inf);
         LOGGER.info("sysconfig params:" + system.toString());
+
+        // 流式查询控制器初始化
+        WriteQueueFlowController.init();
 
         // startup manager
         ManagerConnectionFactory mf = new ManagerConnectionFactory();
@@ -365,7 +344,6 @@ public class MycatServer {
                 bufferPool = new DirectByteBufferPool(bufferPoolPageSize, bufferPoolChunkSize,
                         bufferPoolPageNumber, system.getFrontSocketSoRcvbuf());
 
-
                 totalNetWorkBufferSize = bufferPoolPageSize * bufferPoolPageNumber;
                 break;
             case 1:
@@ -390,7 +368,6 @@ public class MycatServer {
             default:
                 bufferPool = new DirectByteBufferPool(bufferPoolPageSize, bufferPoolChunkSize,
                         bufferPoolPageNumber, system.getFrontSocketSoRcvbuf());
-                ;
                 totalNetWorkBufferSize = bufferPoolPageSize * bufferPoolPageNumber;
         }
 
@@ -406,15 +383,13 @@ public class MycatServer {
                 LOGGER.error("Error", e);
             }
         }
-        businessExecutor = ExecutorUtil.create("BusinessExecutor",
-                threadPoolSize);
+        businessExecutor = ExecutorUtil.create("BusinessExecutor", threadPoolSize);
         sequenceExecutor = ExecutorUtil.create("SequenceExecutor", threadPoolSize);
         timerExecutor = ExecutorUtil.create("Timer", system.getTimerExecutor());
         listeningExecutorService = MoreExecutors.listeningDecorator(businessExecutor);
 
         for (int i = 0; i < processors.length; i++) {
-            processors[i] = new NIOProcessor("Processor" + i, bufferPool,
-                    businessExecutor);
+            processors[i] = new NIOProcessor("Processor" + i, bufferPool, businessExecutor);
         }
 
         if (aio) {
@@ -438,20 +413,16 @@ public class MycatServer {
                         }
                 );
             }
-            manager = new AIOAcceptor(NAME + "Manager", system.getBindIp(),
-                    system.getManagerPort(), mf, this.asyncChannelGroups[0]);
+            manager = new AIOAcceptor(NAME + "Manager", system.getBindIp(), system.getManagerPort(), mf, this.asyncChannelGroups[0]);
 
             // startup server
 
-            server = new AIOAcceptor(NAME + "Server", system.getBindIp(),
-                    system.getServerPort(), sf, this.asyncChannelGroups[0]);
+            server = new AIOAcceptor(NAME + "Server", system.getBindIp(), system.getServerPort(), sf, this.asyncChannelGroups[0]);
 
         } else {
             LOGGER.info("using nio network handler ");
 
-            NIOReactorPool reactorPool = new NIOReactorPool(
-                    DirectByteBufferPool.LOCAL_BUF_THREAD_PREX + "NIOREACTOR",
-                    processors.length);
+            NIOReactorPool reactorPool = new NIOReactorPool(DirectByteBufferPool.LOCAL_BUF_THREAD_PREX + "NIOREACTOR", processors.length);
             connector = new NIOConnector(DirectByteBufferPool.LOCAL_BUF_THREAD_PREX + "NIOConnector", reactorPool);
             ((NIOConnector) connector).start();
 
@@ -491,7 +462,7 @@ public class MycatServer {
         heartbeatScheduler.scheduleAtFixedRate(dataNodeHeartbeat(), 0L, system.getDataNodeHeartbeatPeriod(), TimeUnit.MILLISECONDS);
         heartbeatScheduler.scheduleAtFixedRate(dataSourceOldConsClear(), 0L, DEFAULT_OLD_CONNECTION_CLEAR_PERIOD, TimeUnit.MILLISECONDS);
         heartbeatScheduler.scheduleAtFixedRate(dataNodeCalcActiveCons(), 0L, DEFAULT_DATANODE_CALC_ACTIVECOUNT, TimeUnit.MILLISECONDS);
-        //
+
         scheduler.schedule(catletClassClear(), 30000, TimeUnit.MILLISECONDS);
 
         if (system.getCheckTableConsistency() == 1) {
@@ -500,7 +471,8 @@ public class MycatServer {
 
         ensureSqlstatRecycleFuture();
 
-        if (system.getUseGlobleTableCheck() == 1) {    // 全局表一致性检测是否开启
+        // 全局表一致性检测是否开启
+        if (system.getUseGlobleTableCheck() == 1) {
 //			scheduler.scheduleAtFixedRate(glableTableConsistencyCheck(), 0L, system.getGlableTableCheckPeriod(), TimeUnit.MILLISECONDS);
         }
 
@@ -538,9 +510,9 @@ public class MycatServer {
 
     public void ensureSqlstatRecycleFuture() {
         if (config.getSystem().getUseSqlStat() == 1) {
-            if(recycleSqlStatFuture == null){
+            if (recycleSqlStatFuture == null) {
                 recycleSqlStatFuture = scheduler
-                    .scheduleAtFixedRate(recycleSqlStat(), 0L, DEFAULT_SQL_STAT_RECYCLE_PERIOD, TimeUnit.MILLISECONDS);
+                        .scheduleAtFixedRate(recycleSqlStat(), 0L, DEFAULT_SQL_STAT_RECYCLE_PERIOD, TimeUnit.MILLISECONDS);
             }
         } else {
             if (recycleSqlStatFuture != null) {
@@ -551,7 +523,9 @@ public class MycatServer {
     }
 
     public void initRuleData() {
-        if (!isUseZk()) return;
+        if (!isUseZk()) {
+            return;
+        }
         InterProcessMutex ruleDataLock = null;
         try {
             File file = new File(SystemConfig.getHomePath(), "conf" + File.separator + "ruledata");
@@ -576,8 +550,9 @@ public class MycatServer {
             throw new RuntimeException(e);
         } finally {
             try {
-                if (ruleDataLock != null)
+                if (ruleDataLock != null) {
                     ruleDataLock.release();
+                }
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -606,7 +581,9 @@ public class MycatServer {
     }
 
     public void reloadDnIndex() {
-        if (MycatServer.getInstance().getProcessors() == null) return;
+        if (MycatServer.getInstance().getProcessors() == null) {
+            return;
+        }
         // load datanode active index from properties
         dnIndexProperties = loadDnIndexProps();
         // init datahost
@@ -636,7 +613,6 @@ public class MycatServer {
             ;
         };
     }
-
 
     /**
      * 清理 reload @@config_all 后，老的 connection 连接
@@ -671,7 +647,6 @@ public class MycatServer {
             ;
         };
     }
-
 
     /**
      * 在bufferpool使用率大于使用率阈值时不清理
@@ -729,7 +704,6 @@ public class MycatServer {
         }
         return prop;
     }
-
 
     public synchronized boolean saveDataHostIndexToZk(String dataHost, int curIndex) {
         boolean result = false;
@@ -814,7 +788,6 @@ public class MycatServer {
         }
 
     }
-
 
     private boolean isUseZk() {
         String loadZk = ZkConfig.getInstance().getValue(ZkParamCfg.ZK_CFG_FLAG);
@@ -980,7 +953,7 @@ public class MycatServer {
                         Map<String, PhysicalDBPool> nodes = config.getDataHosts();
                         for (PhysicalDBPool node : nodes.values()) {
                             Collection<PhysicalDatasource> dataSources = node.getAllDataSources();
-                            for(PhysicalDatasource ds : dataSources) {
+                            for (PhysicalDatasource ds : dataSources) {
                                 ds.calcTotalCount();
                             }
                         }
@@ -1016,17 +989,17 @@ public class MycatServer {
 
                 List<CoordinatorLogEntry> CoordinatorLogEntryList = null;
                 long currentTime = TimeUtil.currentTimeMillis();
-                for(CoordinatorLogEntry coordinatorLogEntry : coordinatorLogEntries) {
+                for (CoordinatorLogEntry coordinatorLogEntry : coordinatorLogEntries) {
                     //超过执行时间20秒 进行重试
-                    if(currentTime >  sqlTimeout + 20 * 1000 + coordinatorLogEntry.createTime){
-                        if(CoordinatorLogEntryList == null) {
+                    if (currentTime > sqlTimeout + 20 * 1000 + coordinatorLogEntry.createTime) {
+                        if (CoordinatorLogEntryList == null) {
                             CoordinatorLogEntryList = new ArrayList<CoordinatorLogEntry>();
                         }
                         CoordinatorLogEntryList.add(coordinatorLogEntry);
                     }
                 }
-                if(CoordinatorLogEntryList != null) {
-                    performXARecoveryLog((CoordinatorLogEntry[])CoordinatorLogEntryList.toArray());
+                if (CoordinatorLogEntryList != null) {
+                    performXARecoveryLog((CoordinatorLogEntry[]) CoordinatorLogEntryList.toArray());
                 }
             }
         };
@@ -1075,19 +1048,19 @@ public class MycatServer {
                     needRollback = true;
                 }
                 if (participantLogEntry.txState == TxState.TX_COMMITED_STATE) {
-                	hasCommit = true;
+                    hasCommit = true;
                 }
             }
             //补充提交 prepare 状态的提交, xa commit or xa rollback
             if (needRollback) {
                 //1 can rollback
-            	if(!hasCommit) {
+                if (!hasCommit) {
                     for (int j = 0; j < coordinatorLogEntry.participants.length; j++) {
                         ParticipantLogEntry participantLogEntry = coordinatorLogEntry.participants[j];
                         if (participantLogEntry.txState == TxState.TX_COMMITED_STATE || participantLogEntry.txState == TxState.TX_ROLLBACKED_STATE) {
                             continue;
                         }                         //XA rollback
-                        String xacmd = "XA ROLLBACK " + coordinatorLogEntry.id  +",'"+ participantLogEntry.resourceName+"'" + ';';
+                        String xacmd = "XA ROLLBACK " + coordinatorLogEntry.id + ",'" + participantLogEntry.resourceName + "'" + ';';
                         LOGGER.debug("send xaCmd : {}", xacmd);
                         OneRawSQLQueryResultHandler resultHandler = new OneRawSQLQueryResultHandler(new String[0], new XARollbackCallback(coordinatorLogEntry.id,
                                 participantLogEntry
@@ -1095,15 +1068,15 @@ public class MycatServer {
                         //xa cmd send
                         sendXaCmd(participantLogEntry, xacmd, resultHandler);
                     }
-            	}  else {
-                    LOGGER.debug( "some has commit in {}",coordinatorLogEntry);
+                } else {
+                    LOGGER.debug("some has commit in {}", coordinatorLogEntry);
                     for (int j = 0; j < coordinatorLogEntry.participants.length; j++) {
                         ParticipantLogEntry participantLogEntry = coordinatorLogEntry.participants[j];
                         if (participantLogEntry.txState == TxState.TX_COMMITED_STATE || participantLogEntry.txState == TxState.TX_ROLLBACKED_STATE) {
                             continue;
                         }
                         //XA commit
-                        String xacmd = "XA COMMIT " + coordinatorLogEntry.id  +",'"+ participantLogEntry.resourceName+"'" + ';';
+                        String xacmd = "XA COMMIT " + coordinatorLogEntry.id + ",'" + participantLogEntry.resourceName + "'" + ';';
                         LOGGER.debug("send xaCmd : {}", xacmd);
                         OneRawSQLQueryResultHandler resultHandler = new OneRawSQLQueryResultHandler(new String[0], new XACommitCallback(coordinatorLogEntry.id,
                                 participantLogEntry
@@ -1111,10 +1084,10 @@ public class MycatServer {
                         //xa cmd send
                         sendXaCmd(participantLogEntry, xacmd, resultHandler);
                     }
-            	}      	
+                }
             }
         }
-   }
+    }
 
     private void sendXaCmd(ParticipantLogEntry participantLogEntry, String xacmd,
                            OneRawSQLQueryResultHandler resultHandler) {
@@ -1162,7 +1135,6 @@ public class MycatServer {
     public boolean isAIO() {
         return aio;
     }
-
 
     public ListeningExecutorService getListeningExecutorService() {
         return listeningExecutorService;
