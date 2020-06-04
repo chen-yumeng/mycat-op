@@ -23,19 +23,18 @@
  */
 package io.mycat.backend.mysql.nio.handler;
 
-import java.util.List;
-
+import io.mycat.backend.BackendConnection;
 import io.mycat.backend.mysql.nio.MySQLConnection;
 import io.mycat.backend.mysql.xa.CoordinatorLogEntry;
 import io.mycat.backend.mysql.xa.TxState;
 import io.mycat.config.ErrorCode;
 import io.mycat.net.mysql.OkPacket;
-
-import org.slf4j.Logger; import org.slf4j.LoggerFactory;
-
-import io.mycat.backend.BackendConnection;
 import io.mycat.route.RouteResultsetNode;
 import io.mycat.server.NonBlockingSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 /**
  * @author mycat
@@ -241,6 +240,7 @@ public class RollbackNodeHandler extends MultiNodeHandler {
 
 	}
 
+	@Override
 	public void connectionClose(BackendConnection conn, String reason) {
 		this.setFail("closed connection:" + reason + " con:" + conn);
 		boolean finished = false;
@@ -257,7 +257,8 @@ public class RollbackNodeHandler extends MultiNodeHandler {
 
 		}
 	}
-	protected void tryErrorFinished(boolean allEnd) {
+	@Override
+    protected void tryErrorFinished(boolean allEnd) {
 		if (allEnd && !session.closed()) {		
 			
 			
