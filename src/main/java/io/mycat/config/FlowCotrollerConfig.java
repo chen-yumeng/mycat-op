@@ -8,12 +8,12 @@ public class FlowCotrollerConfig {
 
     private final boolean enableFlowControl;
     private final int start;
-    private final int end;
+    private final int stop;
 
     public FlowCotrollerConfig(boolean enableFlowControl, int start, int end) {
         this.enableFlowControl = enableFlowControl;
         this.start = start;
-        this.end = end;
+        this.stop = end;
     }
 
     public boolean isEnableFlowControl() {
@@ -24,7 +24,7 @@ public class FlowCotrollerConfig {
         return start;
     }
 
-    public int getEnd() {
-        return end;
+    public int getStop() {
+        return stop;
     }
 }

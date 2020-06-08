@@ -39,6 +39,7 @@ import io.mycat.buffer.BufferPool;
 import io.mycat.buffer.DirectByteBufferPool;
 import io.mycat.buffer.NettyBufferPool;
 import io.mycat.cache.CacheService;
+import io.mycat.config.FlowCotrollerConfig;
 import io.mycat.config.MycatConfig;
 import io.mycat.config.classloader.DynaClassLoader;
 import io.mycat.config.loader.zkprocess.comm.ZkConfig;
@@ -59,7 +60,6 @@ import io.mycat.server.interceptor.SQLInterceptor;
 import io.mycat.server.interceptor.impl.GlobalTableUtil;
 import io.mycat.sqlengine.OneRawSQLQueryResultHandler;
 import io.mycat.sqlengine.SQLJob;
-import io.mycat.sqlengine.WriteQueueFlowController;
 import io.mycat.statistic.SQLRecorder;
 import io.mycat.statistic.stat.SqlResultSizeRecorder;
 import io.mycat.statistic.stat.UserStat;
@@ -151,6 +151,8 @@ public class MycatServer {
 
     private ScheduledFuture<?> recycleSqlStatFuture = null;
 
+    private volatile FlowCotrollerConfig flowConfig;
+
     private MycatServer() {
 
         //读取文件配置
@@ -200,6 +202,10 @@ public class MycatServer {
 
         }
 
+    }
+
+    public FlowCotrollerConfig getFlowConfig() {
+        return flowConfig;
     }
 
     public AtomicBoolean getStartup() {
@@ -317,7 +323,7 @@ public class MycatServer {
         LOGGER.info("sysconfig params:" + system.toString());
 
         // 流式查询控制器初始化
-        WriteQueueFlowController.init();
+        flowConfig = new FlowCotrollerConfig(system.isEnableFlowControl(), system.getFlowControlStartMaxValue(), system.getFlowControlStopMaxValue());
 
         // startup manager
         ManagerConnectionFactory mf = new ManagerConnectionFactory();

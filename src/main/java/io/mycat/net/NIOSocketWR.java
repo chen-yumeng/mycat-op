@@ -1,7 +1,7 @@
 package io.mycat.net;
 
+import io.mycat.MycatServer;
 import io.mycat.config.FlowCotrollerConfig;
-import io.mycat.sqlengine.WriteQueueFlowController;
 import io.mycat.util.TimeUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,14 +92,15 @@ public class NIOSocketWR extends SocketWR {
     }
 
     private boolean write0() throws IOException {
-        int flowControlCount = -1;
+        int writeQueueSizeCount = -1;
         int written = 0;
         ByteBuffer buffer = abstractConnection.writeBuffer;
         // buffer不为空说明写缓冲记录中还有数据,客户端还未读取
         if (buffer != null) {
-            //只要写缓冲记录中还有数据就不停写入，但如果写入字节为0，证明阻塞，则退出
+            //只要写缓冲记录中还有数据就不停写入
             while (buffer.hasRemaining()) {
                 written = channel.write(buffer);
+                // 如果写入字节为0，证明阻塞，则退出
                 if (written > 0) {
                     abstractConnection.netOutBytes += written;
                     abstractConnection.processor.addNetOutBytes(written);
@@ -109,8 +110,10 @@ public class NIOSocketWR extends SocketWR {
                 }
             }
 
-            // 检查当前是否需要停止流式查询控制
-            flowControlCount = checkFlowControl(flowControlCount);
+            /**
+             * 如果开启了流式查询，则返回当前写队列大小
+             */
+            writeQueueSizeCount = checkWriteQueueSize(writeQueueSizeCount);
 
             //如果写缓冲中还有数据证明网络繁忙或阻塞，退出，否则清空缓冲
             if (buffer.hasRemaining()) {
@@ -120,7 +123,9 @@ public class NIOSocketWR extends SocketWR {
                 abstractConnection.recycle(buffer);
             }
         }
-        //读取缓存队列并写入通道
+
+
+        //读取缓存队列buffer
         while ((buffer = abstractConnection.writeQueue.poll()) != null) {
             if (buffer.limit() == 0) {
                 abstractConnection.recycle(buffer);
@@ -130,11 +135,11 @@ public class NIOSocketWR extends SocketWR {
 
             buffer.flip();
             try {
-                //如果写缓冲中还有数据证明网络繁忙，计数，记录下这次未写完的数据到写缓冲记录并退出，否则回收缓冲
+                //如果写缓存队列buffer中还有数据证明网络繁忙，计数，记录下这次未写完的数据到写缓冲记录并退出，否则回收缓冲
+                // 写缓存队列buffer中还有数据就不停写入
                 while (buffer.hasRemaining()) {
                     written = channel.write(buffer);
-                    // java.io.IOException:
-                    // Connection reset by peer
+                    // 如果写入字节为0，证明阻塞，则退出
                     if (written > 0) {
                         abstractConnection.lastWriteTime = TimeUtil.currentTimeMillis();
                         abstractConnection.netOutBytes += written;
@@ -151,9 +156,12 @@ public class NIOSocketWR extends SocketWR {
                 throw e;
             }
 
-            // 检查当前是否需要停止流式查询控制
-            flowControlCount = checkFlowControl(flowControlCount);
+            /**
+             * 检查当前队列大小是否达到可停止值
+             */
+            writeQueueSizeCount = checkWriteQueueSize(writeQueueSizeCount);
 
+            // 如果写队列buffer中还有数据，说明阻塞，记录下这次未写完的数据到写缓冲记录并退出
             if (buffer.hasRemaining()) {
                 abstractConnection.writeBuffer = buffer;
                 return false;
@@ -165,39 +173,39 @@ public class NIOSocketWR extends SocketWR {
     }
 
     /**
-     * 检查是否需要停止流式控制控制
+     * 检查当前写队列大小是否可以停止流式控制
      *
-     * @param flowControlCount
+     * @param writeQueueSizeCount
      * @return
      */
-    private int checkFlowControl(int flowControlCount) {
-        FlowCotrollerConfig config = WriteQueueFlowController.getFlowCotrollerConfig();
-        // 如果配置了开启流式查询控制，进行检查，否则不作处理
+    private int checkWriteQueueSize(int writeQueueSizeCount) {
+        FlowCotrollerConfig config = MycatServer.getInstance().getFlowConfig();
+        // 如果配置了开启流式查询控制则进行检查，否则不作处理
         if (config.isEnableFlowControl()) {
-            // 未开启流式查询
-            if (!config.isEnableFlowControl()) {
-                abstractConnection.stopFlowControl();
-                return -1;
-            } else if ((flowControlCount != -1) && (flowControlCount <= config.getEnd())) {
-                int currentSize = this.abstractConnection.writeQueue.size();
-                // 达到停止条件时
-                if (currentSize <= config.getEnd()) {
+            if ((writeQueueSizeCount != -1) && (writeQueueSizeCount <= config.getStop())) {
+                // 获取当前写队列大小
+                int writeQueueSize = this.abstractConnection.writeQueue.size();
+                // 达到停止条件时,停止流式控制，否则返回当前写队列大小
+                if (writeQueueSize <= config.getStop()) {
                     abstractConnection.stopFlowControl();
                     return -1;
                 } else {
-                    return currentSize;
+                    return writeQueueSize;
                 }
-            } else if (flowControlCount == -1) {
-                int currentSize = this.abstractConnection.writeQueue.size();
-                // 达到停止条件时
-                if (currentSize <= config.getEnd()) {
+            // 默认值，即第一次调用一定进入
+            } else if (writeQueueSizeCount == -1) {
+                // 获取当前写队列大小
+                int writeQueueSize = this.abstractConnection.writeQueue.size();
+                // 达到停止条件时,停止流式控制，否则返回当前写队列大小
+                if (writeQueueSize <= config.getStop()) {
                     abstractConnection.stopFlowControl();
                     return -1;
                 } else {
-                    return currentSize;
+                    return writeQueueSize;
                 }
+            // 未达到停止条件
             } else {
-                return --flowControlCount;
+                return --writeQueueSizeCount;
             }
         } else {
             return -1;

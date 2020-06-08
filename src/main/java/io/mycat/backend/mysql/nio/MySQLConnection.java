@@ -816,13 +816,11 @@ public class MySQLConnection extends BackendAIOConnection {
 
     @Override
     public void startFlowControl(BackendConnection backendConnection) {
-        LOGGER.info("Session start flow control " + this);
         this.setFlowControlled(true);
     }
 
     @Override
     public void stopFlowControl() {
-        LOGGER.info("Session stop flow control " + this);
         this.setFlowControlled(false);
     }
 

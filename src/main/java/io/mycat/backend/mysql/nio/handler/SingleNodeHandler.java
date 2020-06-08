@@ -41,7 +41,6 @@ import io.mycat.server.parser.ServerParse;
 import io.mycat.server.parser.ServerParseShow;
 import io.mycat.server.response.ShowFullTables;
 import io.mycat.server.response.ShowTables;
-import io.mycat.sqlengine.WriteQueueFlowController;
 import io.mycat.statistic.stat.QueryResult;
 import io.mycat.statistic.stat.QueryResultDispatcher;
 import io.mycat.util.ResultSetUtil;
@@ -499,7 +498,7 @@ public class SingleNodeHandler implements ResponseHandler, Terminatable, LoadDat
             return;
         }
 
-        FlowCotrollerConfig flowConfig = WriteQueueFlowController.getFlowCotrollerConfig();
+        FlowCotrollerConfig flowConfig = MycatServer.getInstance().getFlowConfig();
         // 当配置了开启流式查询并且达到开启的最大值时启动流式查询控制
         if (flowConfig.isEnableFlowControl() && session.getSource().getWriteQueue().size() > flowConfig.getStart()) {
             session.getSource().startFlowControl(conn);

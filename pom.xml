@@ -249,120 +249,120 @@
 
 	<build>
 		<!-- finalName>${artifactId}-${version}-${buildNumber}</finalName -->
-<!--		<resources>-->
-<!--			<resource>-->
-<!--				<directory>src/main/resources</directory>-->
-<!--				<excludes>-->
-<!--					<exclude>**/.svn/**</exclude>-->
-<!--				</excludes>-->
-<!--			</resource>-->
-<!--			<resource>-->
-<!--				<directory>${basedir}</directory>-->
-<!--				<includes>-->
-<!--					<include>${version.file}</include>-->
-<!--				</includes>-->
-<!--			</resource>-->
-<!--		</resources>-->
-<!--		<testResources>-->
-<!--			<testResource>-->
-<!--				<directory>src/test/resources</directory>-->
-<!--				<excludes>-->
-<!--					<exclude>**/.svn/**</exclude>-->
-<!--				</excludes>-->
-<!--			</testResource>-->
-<!--		</testResources>-->
-<!--		<pluginManagement>-->
-<!--			<plugins>-->
-<!--				<plugin>-->
-<!--					<groupId>org.eclipse.m2e</groupId>-->
-<!--					<artifactId>lifecycle-mapping</artifactId>-->
-<!--					<version>1.0.0</version>-->
-<!--					<configuration>-->
-<!--						<lifecycleMappingMetadata>-->
-<!--							<pluginExecutions>-->
-<!--								<pluginExecution>-->
-<!--									<pluginExecutionFilter>-->
-<!--										<groupId>com.google.code.maven-replacer-plugin</groupId>-->
-<!--										<artifactId>replacer</artifactId>-->
-<!--										<versionRange>[1.0.0,)</versionRange>-->
-<!--										<goals>-->
-<!--											<goal>replace</goal>-->
-<!--										</goals>-->
-<!--									</pluginExecutionFilter>-->
-<!--									<action>-->
-<!--										<ignore />-->
-<!--									</action>-->
-<!--								</pluginExecution>-->
-<!--							</pluginExecutions>-->
-<!--						</lifecycleMappingMetadata>-->
-<!--					</configuration>-->
-<!--				</plugin>-->
-<!--			</plugins>-->
-<!--		</pluginManagement>-->
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<excludes>
+					<exclude>**/.svn/**</exclude>
+				</excludes>
+			</resource>
+			<resource>
+				<directory>${basedir}</directory>
+				<includes>
+					<include>${version.file}</include>
+				</includes>
+			</resource>
+		</resources>
+		<testResources>
+			<testResource>
+				<directory>src/test/resources</directory>
+				<excludes>
+					<exclude>**/.svn/**</exclude>
+				</excludes>
+			</testResource>
+		</testResources>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.eclipse.m2e</groupId>
+					<artifactId>lifecycle-mapping</artifactId>
+					<version>1.0.0</version>
+					<configuration>
+						<lifecycleMappingMetadata>
+							<pluginExecutions>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>com.google.code.maven-replacer-plugin</groupId>
+										<artifactId>replacer</artifactId>
+										<versionRange>[1.0.0,)</versionRange>
+										<goals>
+											<goal>replace</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore />
+									</action>
+								</pluginExecution>
+							</pluginExecutions>
+						</lifecycleMappingMetadata>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 		<plugins>
-<!--			<plugin>-->
-<!--				<groupId>com.google.code.maven-replacer-plugin</groupId>-->
-<!--				<artifactId>replacer</artifactId>-->
-<!--				<version>1.5.3</version>-->
-<!--				<executions>-->
-<!--					<execution>-->
-<!--						<id>version</id>-->
-<!--						<phase>process-sources</phase>-->
-<!--						<goals>-->
-<!--							<goal>replace</goal>-->
-<!--						</goals>-->
-<!--						<configuration>-->
-<!--							<file>${project.basedir}/${version.template.file}</file>-->
-<!--							<outputFile>${project.basedir}/${version.file}</outputFile>-->
-<!--							<replacements>-->
-<!--								<replacement>-->
-<!--									<token>@buildnumber@</token>-->
-<!--									<value>${buildNumber}</value>-->
-<!--								</replacement>-->
-<!--								<replacement>-->
-<!--									<token>@buildtime@</token>-->
-<!--									<value>${maven.build.timestamp}</value>-->
-<!--								</replacement>-->
-<!--								<replacement>-->
-<!--									<token>@pomversion@</token>-->
-<!--									<value>${project.version}</value>-->
-<!--								</replacement>-->
-<!--								<replacement>-->
-<!--									<token>@giturl@</token>-->
-<!--									<value>https://github.com/MyCATApache/Mycat-Server.git</value>-->
-<!--								</replacement>-->
-<!--								<replacement>-->
-<!--									<token>@mycatsite@</token>-->
-<!--									<value>http://www.mycat.org.cn</value>-->
-<!--								</replacement>-->
-<!--								<replacement>-->
-<!--									<token>@qqgroup@</token>-->
-<!--									<value>106088787</value>-->
-<!--								</replacement>-->
-<!--							</replacements>-->
-<!--						</configuration>-->
-<!--					</execution>-->
-<!--					<execution>-->
-<!--						<id>version2</id>-->
+			<plugin>
+				<groupId>com.google.code.maven-replacer-plugin</groupId>
+				<artifactId>replacer</artifactId>
+				<version>1.5.3</version>
+				<executions>
+					<execution>
+						<id>version</id>
+						<phase>process-sources</phase>
+						<goals>
+							<goal>replace</goal>
+						</goals>
+						<configuration>
+							<file>${project.basedir}/${version.template.file}</file>
+							<outputFile>${project.basedir}/${version.file}</outputFile>
+							<replacements>
+								<replacement>
+									<token>@buildnumber@</token>
+									<value>${buildNumber}</value>
+								</replacement>
+								<replacement>
+									<token>@buildtime@</token>
+									<value>${maven.build.timestamp}</value>
+								</replacement>
+								<replacement>
+									<token>@pomversion@</token>
+									<value>${project.version}</value>
+								</replacement>
+								<replacement>
+									<token>@giturl@</token>
+									<value>https://github.com/MyCATApache/Mycat-Server.git</value>
+								</replacement>
+								<replacement>
+									<token>@mycatsite@</token>
+									<value>http://www.mycat.org.cn</value>
+								</replacement>
+								<replacement>
+									<token>@qqgroup@</token>
+									<value>106088787</value>
+								</replacement>
+							</replacements>
+						</configuration>
+					</execution>
+					<execution>
+						<id>version2</id>
 
-<!--						<phase>process-sources</phase>-->
-<!--						<goals>-->
-<!--							<goal>replace</goal>-->
-<!--						</goals>-->
-<!--						<configuration>-->
-<!--							<file>${project.basedir}/src/main/java/io/mycat/config/Versions.template</file>-->
-<!--							<outputFile>${project.basedir}/src/main/java/io/mycat/config/Versions.java</outputFile>-->
-<!--							<replacements>-->
-<!--								<replacement>-->
-<!--									<token>@server-version@</token>-->
-<!--									<value>5.6.29-mycat-${project.version}-${timestamp}</value>-->
-<!--								</replacement>-->
-<!--							</replacements>-->
-<!--						</configuration>-->
-<!--					</execution>-->
-<!--				</executions>-->
+						<phase>process-sources</phase>
+						<goals>
+							<goal>replace</goal>
+						</goals>
+						<configuration>
+							<file>${project.basedir}/src/main/java/io/mycat/config/Versions.template</file>
+							<outputFile>${project.basedir}/src/main/java/io/mycat/config/Versions.java</outputFile>
+							<replacements>
+								<replacement>
+									<token>@server-version@</token>
+									<value>5.6.29-mycat-${project.version}-${timestamp}</value>
+								</replacement>
+							</replacements>
+						</configuration>
+					</execution>
+				</executions>
 
-<!--			</plugin>-->
+			</plugin>
 
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -404,30 +404,30 @@
 						<goals>
 							<goal>test-jar</goal>
 						</goals>
-						<!-- configuration> <finalName>${project.build.finalName}-${buildNumber}</finalName> 
+						<!-- configuration> <finalName>${project.build.finalName}-${buildNumber}</finalName>
 							</configuration -->
 					</execution>
 				</executions>
 			</plugin>
-<!--			<plugin>-->
-<!--				<groupId>org.apache.maven.plugins</groupId>-->
-<!--				<artifactId>maven-eclipse-plugin</artifactId>-->
-<!--				<configuration>-->
-<!--					<sourceExcludes>-->
-<!--						<sourceExclude>**/.svn/**</sourceExclude>-->
-<!--					</sourceExcludes>-->
-<!--					<downloadSources>true</downloadSources>-->
-<!--					<outputDirectory>classes</outputDirectory>-->
-<!--					<additionalConfig>-->
-<!--						<file>-->
-<!--							<name>.settings/org.eclipse.core.resources.prefs</name>-->
-<!--							<content>-->
-<!--               <![CDATA[eclipse.preferences.version=1${line.separator}encoding/<project>=${app.encoding}${line.separator}]]>-->
-<!--							</content>-->
-<!--						</file>-->
-<!--					</additionalConfig>-->
-<!--				</configuration>-->
-<!--			</plugin>-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-eclipse-plugin</artifactId>
+				<configuration>
+					<sourceExcludes>
+						<sourceExclude>**/.svn/**</sourceExclude>
+					</sourceExcludes>
+					<downloadSources>true</downloadSources>
+					<outputDirectory>classes</outputDirectory>
+					<additionalConfig>
+						<file>
+							<name>.settings/org.eclipse.core.resources.prefs</name>
+							<content>
+               <![CDATA[eclipse.preferences.version=1${line.separator}encoding/<project>=${app.encoding}${line.separator}]]>
+							</content>
+						</file>
+					</additionalConfig>
+				</configuration>
+			</plugin>
 
 			<!-- -->
 			<plugin>
@@ -439,6 +439,11 @@
 					<includeConfigurationDirectoryInClasspath>true</includeConfigurationDirectoryInClasspath>
 					<repositoryLayout>flat</repositoryLayout>
 					<useWildcardClassPath>true</useWildcardClassPath>
+					<programs>
+						<program>
+							<mainClass>io.mycat.MycatStartup</mainClass>
+						</program>
+					</programs>
 					<daemons>
 						<daemon>
 							<id>mycat</id>
@@ -457,16 +462,16 @@
 								</systemProperties>
 								<extraArguments>
 									<extraArgument>-server </extraArgument>
-									<!--<extraArgument>-XX:MaxPermSize=64M</extraArgument>-->
+<!--									<extraArgument>-XX:MaxPermSize=64M</extraArgument>-->
 									<extraArgument>-XX:+AggressiveOpts</extraArgument>
-									<extraArgument>-XX:MaxDirectMemorySize=2G</extraArgument>
+									<extraArgument>-XX:MaxDirectMemorySize=512m</extraArgument>
 									<!-- 远程JMX -->
 									<extraArgument>-Dcom.sun.management.jmxremote </extraArgument>
 									<extraArgument>-Dcom.sun.management.jmxremote.port=1984</extraArgument>
 									<extraArgument>-Dcom.sun.management.jmxremote.authenticate=false </extraArgument>
 									<extraArgument>-Dcom.sun.management.jmxremote.ssl=false </extraArgument>
-									<extraArgument>-Xmx4G</extraArgument>
-									<extraArgument>-Xms1G</extraArgument>
+									<extraArgument>-Xmx64m</extraArgument>
+									<extraArgument>-Xms64m</extraArgument>
 								</extraArguments>
 							</jvmSettings>
 							<generatorConfigurations>

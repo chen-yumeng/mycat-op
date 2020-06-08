@@ -48,17 +48,17 @@ public final class SystemConfig {
 
     //流式查询配置项
     /**
-     * 是否开启流式查询控制，默认不开启，通过server.xml中的enableFlowControl进行配置
+     * 是否开启流式查询控制，默认开启，通过server.xml中的enableFlowControl进行配置
      */
-    private boolean enableFlowControl = false;
+    private boolean enableFlowControl = true;
     /**
-     * 流式查询控制开启的写队列的最大值，默认1000,通过server.xml中的flowControlStartThreshold进行配置
+     * 流式查询控制开启的写队列最大值，默认为jvm内存最大值/bufferPoolChunkSize*0.618,通过server.xml中的flowControlStartThreshold进行配置
      */
-    private int flowControlStartThreshold = 1000;
+    private int flowControlStartMaxValue;
     /**
-     * 流式查询控制关闭的写队列的最大值，即小于该值即可关闭流式查询，默认256,通过server.xml中的flowControlStopThreshold进行配置
+     * 流式查询控制关闭的写队列最大值，即小于该值即可关闭流式查询，默认为flowControlStartMaxValue/3,通过server.xml中的flowControlStopThreshold进行配置
      */
-    private int flowControlStopThreshold = 256;
+    private int flowControlStopMaxValue;
 
     public boolean isEnableFlowControl() {
         return enableFlowControl;
@@ -68,20 +68,20 @@ public final class SystemConfig {
         this.enableFlowControl = enableFlowControl;
     }
 
-    public int getFlowControlStartThreshold() {
-        return flowControlStartThreshold;
+    public int getFlowControlStartMaxValue() {
+        return flowControlStartMaxValue;
     }
 
-    public void setFlowControlStartThreshold(int flowControlStartThreshold) {
-        this.flowControlStartThreshold = flowControlStartThreshold;
+    public void setFlowControlStartMaxValue(int flowControlStartMaxValue) {
+        this.flowControlStartMaxValue = flowControlStartMaxValue;
     }
 
-    public int getFlowControlStopThreshold() {
-        return flowControlStopThreshold;
+    public int getFlowControlStopMaxValue() {
+        return flowControlStopMaxValue;
     }
 
-    public void setFlowControlStopThreshold(int flowControlStopThreshold) {
-        this.flowControlStopThreshold = flowControlStopThreshold;
+    public void setFlowControlStopMaxValue(int flowControlStopMaxValue) {
+        this.flowControlStopMaxValue = flowControlStopMaxValue;
     }
 
     private int removeGraveAccent;
@@ -154,13 +154,19 @@ public final class SystemConfig {
      */
     private int maxPreparedStmtCount;
 
-    // a page size
+    /**
+     * 缓冲池每页大小
+     */
     private int bufferPoolPageSize;
 
-    //minimum allocation unit
+    /**
+     * buffer最小分配单位
+     */
     private short bufferPoolChunkSize;
 
-    // buffer pool page number
+    /**
+     * 缓冲池总页数
+     */
     private short bufferPoolPageNumber;
 
     //大结果集阈值，默认512kb
@@ -353,6 +359,9 @@ public final class SystemConfig {
         this.ignoreUnknownCommand = 0;
         this.parallExecute = 0;
         this.removeGraveAccent = 1;
+
+        this.flowControlStartMaxValue = (int) (Runtime.getRuntime().totalMemory() / bufferPoolChunkSize * 0.618);
+        this.flowControlStopMaxValue = flowControlStartMaxValue / 5;
     }
 
     public void setMaxPreparedStmtCount(int maxPreparedStmtCount) {

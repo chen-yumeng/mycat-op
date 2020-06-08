@@ -468,14 +468,12 @@ public class ServerConnection extends FrontendConnection {
 
     @Override
     public void stopFlowControl() {
-        LOGGER.info("Session stop flow control " + this);
         session.stopFlowControl();
     }
 
 
     @Override
     public void startFlowControl(BackendConnection backendConnection) {
-        LOGGER.info("Session start flow control " + this);
         session.startFlowControl(backendConnection);
     }
 
