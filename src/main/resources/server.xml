@@ -50,7 +50,7 @@
 		<property name="handleDistributedTransactions">0</property>
         <!--是否开启流式查询控制，默认开启-->
 		<property name="enableFlowControl">true</property>
-        <!--流式查询控制启动的写队列最大值，默认为jvm内存最大值/bufferPoolChunkSize*0.618-->
+        <!--流式查询控制启动的写队列最大值，默认为jvm内存最大值/bufferPoolChunkSize*0.618/dataNode的数量-->
 		<!--<property name="flowControlStartMaxValue">1000</property>-->
         <!--流式查询控制关闭的写队列最大值，默认为flowControlStartMaxValue/5-->
 <!--		<property name="flowControlStopMaxValue">256</property>-->

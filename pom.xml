@@ -470,8 +470,8 @@
 									<extraArgument>-Dcom.sun.management.jmxremote.port=1984</extraArgument>
 									<extraArgument>-Dcom.sun.management.jmxremote.authenticate=false </extraArgument>
 									<extraArgument>-Dcom.sun.management.jmxremote.ssl=false </extraArgument>
-									<extraArgument>-Xmx64m</extraArgument>
-									<extraArgument>-Xms64m</extraArgument>
+									<extraArgument>-Xmx4G</extraArgument>
+									<extraArgument>-Xms1G</extraArgument>
 								</extraArguments>
 							</jvmSettings>
 							<generatorConfigurations>

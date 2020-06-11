@@ -52,7 +52,7 @@ public final class SystemConfig {
      */
     private boolean enableFlowControl = true;
     /**
-     * 流式查询控制开启的写队列最大值，默认为jvm内存最大值/bufferPoolChunkSize*0.618,通过server.xml中的flowControlStartThreshold进行配置
+     * 流式查询控制开启的写队列最大值，默认为jvm内存最大值/bufferPoolChunkSize*0.618/dataNode的数量,通过server.xml中的flowControlStartThreshold进行配置
      */
     private int flowControlStartMaxValue;
     /**
@@ -360,8 +360,6 @@ public final class SystemConfig {
         this.parallExecute = 0;
         this.removeGraveAccent = 1;
 
-        this.flowControlStartMaxValue = (int) (Runtime.getRuntime().totalMemory() / bufferPoolChunkSize * 0.618);
-        this.flowControlStopMaxValue = flowControlStartMaxValue / 5;
     }
 
     public void setMaxPreparedStmtCount(int maxPreparedStmtCount) {

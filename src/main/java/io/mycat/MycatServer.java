@@ -322,8 +322,10 @@ public class MycatServer {
         LOGGER.info(inf);
         LOGGER.info("sysconfig params:" + system.toString());
 
-        // 流式查询控制器初始化
-        flowConfig = new FlowCotrollerConfig(system.isEnableFlowControl(), system.getFlowControlStartMaxValue(), system.getFlowControlStopMaxValue());
+        // 如果配置了流式控制则进行流式查询控制器初始化
+        if (system.isEnableFlowControl()) {
+            flowConfig = new FlowCotrollerConfig(true, system.getFlowControlStartMaxValue(), system.getFlowControlStopMaxValue());
+        }
 
         // startup manager
         ManagerConnectionFactory mf = new ManagerConnectionFactory();
