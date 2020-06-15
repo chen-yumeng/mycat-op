@@ -1,6 +1,8 @@
 package io.mycat.config.model;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -19,6 +21,22 @@ public class UserPrivilegesConfig {
 
 	/** dataNode权限 */
 	private Map<String, DataNodePrivilege> dataNodePrivileges = new HashMap<String, DataNodePrivilege>();
+
+	public List<SchemaPrivilege> getAllSchemaPrivilege() {
+		List<SchemaPrivilege> list = new ArrayList<>();
+		schemaPrivileges.forEach((s, schemaPrivilege) -> {
+			list.add(schemaPrivilege);
+		});
+		return list;
+	}
+
+	public List<DataNodePrivilege> getAllDataNodePrivilege() {
+		List<DataNodePrivilege> list = new ArrayList<>();
+		dataNodePrivileges.forEach((s, dataNodePrivilege) -> {
+			list.add(dataNodePrivilege);
+		});
+		return list;
+	}
 
 	public boolean isCheck() {
 		return check;

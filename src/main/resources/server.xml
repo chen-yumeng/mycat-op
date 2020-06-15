@@ -105,32 +105,30 @@
 	<!--例如<host host="127.*" user="root"/>-->
 	<!--例如<host host="1*7.*" user="root"/>-->
 	<!--这些配置情况下对于127.0.0.1都能以root账户登录-->
-	<!--
 	<firewall>
 	   <whitehost>
-	      <host host="1*7.0.0.*" user="root"/>
+	      <host host="1*7.0.0.*" user="user"/>
+	      <host host="127.0.0.9" user="root"/>
 	   </whitehost>
-       <blacklist check="false">
+       <blacklist check="true">
+		   <property name="local">192.168.0.0</property>
        </blacklist>
 	</firewall>
-	-->
 
-<!--	<user name="root" defaultAccount="true">-->
-<!--		<property name="password">123456</property>-->
-<!--		<property name="schemas">TESTDB</property>-->
-<!--		<property name="defaultSchema">TESTDB</property>-->
+	<user name="root" defaultAccount="true">
+		<property name="password">123456</property>
+		<property name="schemas">TESTDB</property>
+		<property name="defaultSchema">TESTDB</property>
 		<!--No MyCAT Database selected 错误前会尝试使用该schema作为schema，不设置则为null,报错 -->
 		
 		<!-- 表级 DML 权限设置 -->
-		<!-- 		
-		<privileges check="false">
+		<privileges check="true">
 			<schema name="TESTDB" dml="0110" >
 				<table name="tb01" dml="0000"></table>
 				<table name="tb02" dml="1111"></table>
 			</schema>
 		</privileges>		
-		 -->
-<!--	</user>-->
+	</user>
 
 	<user name="user">
 		<property name="password">123456</property>

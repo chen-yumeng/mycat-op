@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>Mycat监控系统</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <div th:replace="common/css"></div>
+</head>
+<body>
+<!-- vue入口 -->
+<div id="app">
+    <!-- aside -->
+    <div th:replace="common/side"></div>
+    <!-- container -->
+    <el-container class="main-container">
+        <!-- header -->
+        <div style="background-color: rgb(84, 92, 100);" th:replace="common/header"></div>
+        <!-- main -->
+        <el-main class="app-main">
+            <el-card>
+                <el-divider content-position="left"><h3>Mycat平台参数</h3></el-divider>
+                <div class="row">
+                    <div class="col-xs-12 col-md-6 col-lg-6 col-xl-3">
+                        <div class="card-box noradius noborder bg-default">
+                            <div style="width: 100px;">
+                                <h4 class="text-white text-uppercase">Mycat已启动</h4>
+                                <h1 class="text-white counter">{{time}}</h1>
+                                <span class="text-white">min</span>
+                            </div>
+                            <div style="width: 240px;position: absolute;left: 45px;top: 25px;">
+                                <i class=" fa fa-desktop float-right text-white"
+                                   style="font-size: 80px;margin-top: 20px"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-6 col-lg-6 col-xl-3">
+                        <div class="card-box noradius noborder bg-warning">
+                            <div style="width: 100px;">
+                                <h4 class="text-white text-uppercase"> 节点主机(dataHost)</h4>
+                                <h1 class="text-white counter">1</h1>
+                                <span class="text-white">主机</span>
+                            </div>
+                            <div style="width: 240px;position: absolute;left: 45px;top: 25px;">
+                                <i class="fa fa-bar-chart float-right text-white"
+                                   style="font-size: 80px;margin-top: 20px"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-6 col-lg-6 col-xl-3 " style="">
+                        <div class="card-box noradius noborder bg-info">
+                            <div style="width: 100px;">
+                                <h4 class="text-white text-uppercase  ">逻辑库(schema)</h4>
+                                <h1 class="text-white counter">4</h1>
+                                <span class="text-white">个</span>
+                            </div>
+                            <div style="width: 240px;position: absolute;left: 45px;top: 25px;">
+                                <i class="fa fa-tasks float-right text-white"
+                                   style="font-size: 80px;margin-top: 20px"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-6 col-lg-6 col-xl-3">
+                        <div class="card-box noradius noborder bg-danger" style="display: block;">
+                            <div style="width: 100px;">
+                                <h4 class="text-white text-uppercase">Mycat平台管理数据总量</h4>
+                                <h1 class="text-white counter">500000</h1>
+                                <span class="text-white">行</span>
+                            </div>
+                            <div style="width: 240px;position: absolute;left: 45px;top: 25px;">
+                                <i class="fa fa-th-list float-right text-white"
+                                   style="font-size: 80px;margin-top: 20px"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </el-card>
+
+            <br>
+            <el-card class="box-card" shadow="always">
+                <div slot="header" class="clearfix">
+                    <el-divider content-position="left"><h3>Mycat防火墙白名单</h3></el-divider>
+                </div>
+                <div v-for="o in 4" :key="o" class="text item">
+                    {{ o }}
+                </div>
+            </el-card>
+            <br>
+            <el-card class="box-card" shadow="always">
+                <div slot="header" class="clearfix ">
+                    <el-divider content-position="left" style="background-color: #FF5D48;"><h3>Mycat防火墙黑名单</h3></el-divider>
+                </div>
+                <div v-for="o in 4" :key="o" class="text item ">
+                    {{ o }}
+                </div>
+            </el-card>
+            <br>
+
+            <el-row :gutter="12">
+                <el-col :span="6">
+                    <el-card shadow="always">
+                        <div slot="header" class="clearfix ">
+                            <span>DataNode1</span>
+                        </div>
+                        <el-collapse>
+                            <el-collapse-item name="1">
+                                <template slot="title">
+                                    <b>dataNode.name</b>&nbsp;&nbsp;<i class="header-icon el-icon-info"></i>
+                                </template>
+                                <div>message</div>
+                            </el-collapse-item>
+                            <el-collapse-item name="2">
+                                <template slot="title">
+                                    <b>dataNode.dataHost</b>&nbsp;&nbsp;<i class="header-icon el-icon-info"></i>
+                                </template>
+                                <div>message</div>
+                            </el-collapse-item>
+                            <el-collapse-item name="3">
+                                <template slot="title">
+                                    <b>dataNode.database</b>&nbsp;&nbsp;<i class="header-icon el-icon-info"></i>
+                                </template>
+                                <div>message</div>
+                            </el-collapse-item>
+                        </el-collapse>
+                    </el-card>
+                </el-col>
+                <el-col :span="6">
+                    <el-card shadow="always">
+                        <div slot="header" class="clearfix ">
+                            <span>DataNode2</span>
+                        </div>
+                        <el-collapse>
+                            <el-collapse-item name="1">
+                                <template slot="title">
+                                    <b>dataNode.name</b>&nbsp;&nbsp;<i class="header-icon el-icon-info"></i>
+                                </template>
+                                <div>message</div>
+                            </el-collapse-item>
+                            <el-collapse-item name="2">
+                                <template slot="title">
+                                    <b>dataNode.dataHost</b>&nbsp;&nbsp;<i class="header-icon el-icon-info"></i>
+                                </template>
+                                <div>message</div>
+                            </el-collapse-item>
+                            <el-collapse-item name="3">
+                                <template slot="title">
+                                    <b>dataNode.database</b>&nbsp;&nbsp;<i class="header-icon el-icon-info"></i>
+                                </template>
+                                <div>message</div>
+                            </el-collapse-item>
+                        </el-collapse>
+                    </el-card>
+                </el-col>
+                <el-col :span="6">
+                    <el-card shadow="always">
+                        <div slot="header" class="clearfix ">
+                            <span>DataNode3</span>
+                        </div>
+                        <el-collapse>
+                            <el-collapse-item name="1">
+                                <template slot="title">
+                                    <b>dataNode.name</b>&nbsp;&nbsp;<i class="header-icon el-icon-info"></i>
+                                </template>
+                                <div>message</div>
+                            </el-collapse-item>
+                            <el-collapse-item name="2">
+                                <template slot="title">
+                                    <b>dataNode.dataHost</b>&nbsp;&nbsp;<i class="header-icon el-icon-info"></i>
+                                </template>
+                                <div>message</div>
+                            </el-collapse-item>
+                            <el-collapse-item name="3">
+                                <template slot="title">
+                                    <b>dataNode.database</b>&nbsp;&nbsp;<i class="header-icon el-icon-info"></i>
+                                </template>
+                                <div>message</div>
+                            </el-collapse-item>
+                        </el-collapse>
+                    </el-card>
+                </el-col>
+                <el-col :span="6">
+                    <el-card shadow="always">
+                        <div slot="header" class="clearfix ">
+                            <span>DataNode4</span>
+                        </div>
+                        <el-collapse>
+                            <el-collapse-item name="1">
+                                <template slot="title">
+                                    <b>dataNode.name</b>&nbsp;&nbsp;<i class="header-icon el-icon-info"></i>
+                                </template>
+                                <div>message</div>
+                            </el-collapse-item>
+                            <el-collapse-item name="2">
+                                <template slot="title">
+                                    <b>dataNode.dataHost</b>&nbsp;&nbsp;<i class="header-icon el-icon-info"></i>
+                                </template>
+                                <div>message</div>
+                            </el-collapse-item>
+                            <el-collapse-item name="3">
+                                <template slot="title">
+                                    <b>dataNode.database</b>&nbsp;&nbsp;<i class="header-icon el-icon-info"></i>
+                                </template>
+                                <div>message</div>
+                            </el-collapse-item>
+                        </el-collapse>
+                    </el-card>
+                </el-col>
+            </el-row>
+
+
+        </el-main>
+    </el-container>
+</div>
+<div th:replace="common/js"></div>
+<script type="text/javascript" th:src="@{/js/index.js}"></script>
+</body>
+</html>

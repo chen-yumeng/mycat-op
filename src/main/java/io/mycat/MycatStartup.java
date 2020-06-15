@@ -23,21 +23,25 @@
  */
 package io.mycat;
 
-
+import io.mycat.config.loader.zkprocess.comm.ZkConfig;
+import io.mycat.config.model.SystemConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import io.mycat.config.loader.zkprocess.comm.ZkConfig;
-import io.mycat.config.model.SystemConfig;
-
 /**
  * @author mycat
  */
-public final class MycatStartup {
+@EnableAutoConfiguration(exclude = {DataSourceAutoConfiguration.class, MongoAutoConfiguration.class})
+@SpringBootApplication
+public class MycatStartup {
     private static final String dateFormat = "yyyy-MM-dd HH:mm:ss";
     private static final Logger LOGGER = LoggerFactory.getLogger(MycatStartup.class);
     public static void main(String[] args) {
@@ -63,5 +67,6 @@ public final class MycatStartup {
             LOGGER.error(sdf.format(new Date()) + " startup error", e);
             System.exit(-1);
         }
+        SpringApplication.run(MycatStartup.class, args);
     }
 }

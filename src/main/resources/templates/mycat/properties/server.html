@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>Mycat | server配置</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <div th:replace="common/css"></div>
+</head>
+<body>
+<div id="app">
+    <!-- aside -->
+    <div th:replace="common/side"></div>
+
+    <!-- container -->
+    <el-container class="main-container">
+        <!-- header -->
+        <div style="background-color: rgb(84, 92, 100);" th:replace="common/header"></div>
+
+        <!-- main -->
+        <el-main class="app-main">
+            <el-card>
+                <el-divider content-position="left"><h3>一切以server.xml为主，在此修改过的重启后将实现，如需永久修改请在server.xml进行修改</h3>
+                </el-divider>
+            </el-card>
+            <el-collapse accordion>
+                <el-collapse-item title="system配置" name="1">
+                    <el-card>
+                        <el-divider content-position="left"><h3>Mycat system配置</h3></el-divider>
+                        <el-table :data="MycatSystemConfig" size="small" v-loading="loading"
+                                  element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border fit
+                                  highlight-current-row>
+                            <el-table-column prop="key" label="参数名称">
+                                <template slot-scope="scope">
+                                    <span>{{scope.row.key}}</span><br>
+                                    <span>{{scope.row.name}}</span>
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="参数值" width="400">
+                                <template slot-scope="scope">
+                                    <el-input v-model="scope.row.value"></el-input>
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="操作" width="80">
+                                <template slot-scope="scope">
+                                    <el-button type="primary" round size="mini" @click="editSystem(scope.row)">修改</el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </el-card>
+                </el-collapse-item>
+                <el-collapse-item title="user配置" name="3">
+                    <el-card>
+                        <el-divider content-position="left"><h3>Mycat user配置</h3></el-divider>
+                        <el-collapse accordion>
+                            <el-collapse-item v-for="user in users" :title="'用户'+user.key+'的配置'" :name="user.key">
+                                <el-table :data="user.value" size="small" v-loading="loading"
+                                          element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border
+                                          fit highlight-current-row>
+                                    <el-table-column prop="key" label="参数名称">
+                                        <template slot-scope="scope">
+                                            {{scope.row.key}}<br>
+                                            {{scope.row.name}}
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="参数值">
+                                        <template slot-scope="scope">
+                                            {{scope.row.value}}
+                                        </template>
+                                    </el-table-column>
+                                </el-table>
+                            </el-collapse-item>
+                        </el-collapse>
+                    </el-card>
+                </el-collapse-item>
+                <el-collapse-item title="firewall配置" name="2">
+                    <el-card>
+                        <el-divider content-position="left"><h3>Mycat firewall配置</h3></el-divider>
+                        <el-collapse accordion>
+                            <el-collapse-item title="Mycat防火墙白名单" name="1">
+                            </el-collapse-item>
+                            <el-collapse-item title="Mycat防火墙局域白名单" name="2">
+                            </el-collapse-item>
+                            <el-collapse-item title="Mycat防火墙黑名单" name="3">
+                            </el-collapse-item>
+                        </el-collapse>
+                        <el-table :data="MycatSystemConfig" size="small" v-loading="loading"
+                                  element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border fit
+                                  highlight-current-row>
+                            <el-table-column prop="key" label="参数名称">
+                                <template slot-scope="scope">
+                                    <span>{{scope.row.key}}</span><br>
+                                    <span>{{scope.row.name}}</span>
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="参数值" width="400">
+                                <template slot-scope="scope">
+                                    <el-input v-model="scope.row.value"></el-input>
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="操作" width="80">
+                                <template slot-scope="scope">
+                                    <el-button type="primary" round size="mini" @click="edit(scope.row)">修改</el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </el-card>
+                </el-collapse-item>
+            </el-collapse>
+        </el-main>
+    </el-container>
+</div>
+<div th:replace="common/js"></div>
+<script type="text/javascript" th:src="@{/js/mycat/properties/server.js}"></script>
+</body>
+</html>
