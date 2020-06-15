@@ -39,7 +39,6 @@ import io.mycat.buffer.BufferPool;
 import io.mycat.buffer.DirectByteBufferPool;
 import io.mycat.buffer.NettyBufferPool;
 import io.mycat.cache.CacheService;
-import io.mycat.config.FlowCotrollerConfig;
 import io.mycat.config.MycatConfig;
 import io.mycat.config.classloader.DynaClassLoader;
 import io.mycat.config.loader.zkprocess.comm.ZkConfig;
@@ -151,8 +150,6 @@ public class MycatServer {
 
     private ScheduledFuture<?> recycleSqlStatFuture = null;
 
-    private volatile FlowCotrollerConfig flowConfig;
-
     private MycatServer() {
 
         //读取文件配置
@@ -162,7 +159,8 @@ public class MycatServer {
         scheduler = Executors.newSingleThreadScheduledExecutor();
 
         //心跳调度独立出来，避免被其他任务影响
-        heartbeatScheduler = Executors.newSingleThreadScheduledExecutor();
+        //heartbeatScheduler = Executors.newSingleThreadScheduledExecutor();
+        heartbeatScheduler = null;
 
         //SQL记录器
         this.sqlRecorder = new SQLRecorder(config.getSystem().getSqlRecordCount());
@@ -202,10 +200,6 @@ public class MycatServer {
 
         }
 
-    }
-
-    public FlowCotrollerConfig getFlowConfig() {
-        return flowConfig;
     }
 
     public AtomicBoolean getStartup() {
@@ -321,11 +315,6 @@ public class MycatServer {
                 + system.getBufferPoolPageNumber();
         LOGGER.info(inf);
         LOGGER.info("sysconfig params:" + system.toString());
-
-        // 如果配置了流式控制则进行流式查询控制器初始化
-        if (system.isEnableFlowControl()) {
-            flowConfig = new FlowCotrollerConfig(true, system.getFlowControlStartMaxValue(), system.getFlowControlStopMaxValue());
-        }
 
         // startup manager
         ManagerConnectionFactory mf = new ManagerConnectionFactory();
@@ -464,12 +453,12 @@ public class MycatServer {
 
         long dataNodeIldeCheckPeriod = system.getDataNodeIdleCheckPeriod();
 
-        heartbeatScheduler.scheduleAtFixedRate(updateTime(), 0L, TIME_UPDATE_PERIOD, TimeUnit.MILLISECONDS);
-        heartbeatScheduler.scheduleAtFixedRate(processorCheck(), 0L, system.getProcessorCheckPeriod(), TimeUnit.MILLISECONDS);
-        heartbeatScheduler.scheduleAtFixedRate(dataNodeConHeartBeatCheck(dataNodeIldeCheckPeriod), 0L, dataNodeIldeCheckPeriod, TimeUnit.MILLISECONDS);
-        heartbeatScheduler.scheduleAtFixedRate(dataNodeHeartbeat(), 0L, system.getDataNodeHeartbeatPeriod(), TimeUnit.MILLISECONDS);
-        heartbeatScheduler.scheduleAtFixedRate(dataSourceOldConsClear(), 0L, DEFAULT_OLD_CONNECTION_CLEAR_PERIOD, TimeUnit.MILLISECONDS);
-        heartbeatScheduler.scheduleAtFixedRate(dataNodeCalcActiveCons(), 0L, DEFAULT_DATANODE_CALC_ACTIVECOUNT, TimeUnit.MILLISECONDS);
+        //heartbeatScheduler.scheduleAtFixedRate(updateTime(), 0L, TIME_UPDATE_PERIOD, TimeUnit.MILLISECONDS);
+        //heartbeatScheduler.scheduleAtFixedRate(processorCheck(), 0L, system.getProcessorCheckPeriod(), TimeUnit.MILLISECONDS);
+        //heartbeatScheduler.scheduleAtFixedRate(dataNodeConHeartBeatCheck(dataNodeIldeCheckPeriod), 0L, dataNodeIldeCheckPeriod, TimeUnit.MILLISECONDS);
+        //heartbeatScheduler.scheduleAtFixedRate(dataNodeHeartbeat(), 0L, system.getDataNodeHeartbeatPeriod(), TimeUnit.MILLISECONDS);
+        //heartbeatScheduler.scheduleAtFixedRate(dataSourceOldConsClear(), 0L, DEFAULT_OLD_CONNECTION_CLEAR_PERIOD, TimeUnit.MILLISECONDS);
+        //heartbeatScheduler.scheduleAtFixedRate(dataNodeCalcActiveCons(), 0L, DEFAULT_DATANODE_CALC_ACTIVECOUNT, TimeUnit.MILLISECONDS);
 
         scheduler.schedule(catletClassClear(), 30000, TimeUnit.MILLISECONDS);
 

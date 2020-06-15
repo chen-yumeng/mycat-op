@@ -592,21 +592,21 @@ public class PostgreSQLBackendConnection extends BackendAIOConnection {
 
     @Override
     public void disableRead() {
-
+        this.getSocketWR().disableRead();
     }
 
     @Override
     public void enableRead() {
-
+        this.getSocketWR().enableRead();
     }
 
     @Override
     public void startFlowControl(BackendConnection backendConnection) {
-
+        this.setFlowControlled(true);
     }
 
     @Override
     public void stopFlowControl() {
-
+        this.setFlowControlled(false);
     }
 }
