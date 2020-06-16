@@ -108,7 +108,8 @@
 	<firewall>
 	   <whitehost>
 	      <host host="1*7.0.0.*" user="user"/>
-	      <host host="127.0.0.9" user="root"/>
+	      <host host="117.8.0.1" user="user"/>
+	      <host host="127.0.0.9" user="root,user"/>
 	   </whitehost>
        <blacklist check="true">
 		   <property name="local">192.168.0.0</property>

@@ -8,6 +8,15 @@ let app = new Vue({
         MycatSystemConfig: {},
         users: [],
         MycatFirewallConfig: {},
+        whiteHost: null,
+        whiteHostMask: null,
+        blackList: null,
+        addBlackItem: {},
+        isAddBlackItem: false,
+        addWhiteHost: {},
+        isAddWhiteHost: false,
+        addWhiteHostMask: {},
+        isAddWhiteHostMask: false,
     },
     created() {
         this.init(); //初始化
@@ -21,45 +30,443 @@ let app = new Vue({
          */
         init() {
             this.loading = true;
-            this.$http.get(api.mycat.properties.server.getMycatSystemConfig).then(response => {
-                this.MycatSystemConfig = this.filterSystem(response.body.data);
-                this.loading = false;
-            });
-            this.$http.get(api.mycat.properties.server.getMycatUsersConfig).then(response => {
-                this.getUsers(response.body.data);
-                this.loading = false;
-            });
-            this.$http.get(api.mycat.properties.server.getMycatAllFirewallConfig).then(response => {
-                this.MycatFirewallConfig = response.body.data;
-                this.loading = false;
+            this.getConfig();
+            this.getUsers();
+            this.getFirewall();
+        },
+        cheackIP(ip, index) {
+            let re;
+            if (index == 2) {
+                re = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5]|\*\d\d|\d\*\d|\d\d\*|\*|\*\d|\d\*)\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5]|\*\d\d|\d\*\d|\d\d\*|\*|\*\d|\d\*)\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5]|\*\d\d|\d\*\d|\d\d\*|\*|\*\d|\d\*)\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5]|\*\d\d|\d\*\d|\d\d\*|\*|\*\d|\d\*)$/;
+            } else {
+                re = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/;
+            }
+            return re.test(ip);
+        },
+        replaceIP(whiteHostMask, index) {
+            if (index == 1) {
+                whiteHostMask.key = whiteHostMask.key.replace(/\*/g, '[0-9]*').replace(/\./g, '\\\.');
+                return whiteHostMask;
+            }
+            whiteHostMask.forEach(value => {
+                value.key = value.key.replace(/\[0-9\]\*/g, '*').replace(/\\\./g, '.');
             });
         },
-        getUsers(config) {
-            let entries = Object.entries(config);
-            for (let i = 0; i < entries.length; i++) {
-                if (entries[i] != undefined) {
-                    this.users.push({
-                        key: entries[i][0],
-                        value: this.filterUser(entries[i][1])
+        editItem(item, index, i) {
+            if (index == 3) {
+                if (item.key == undefined) {
+                    this.$message({
+                        message: '请输入黑名单名称!',
+                        type: 'error'
                     });
+                    return;
+                }
+                if (!this.cheackIP(item.value, index)) {
+                    this.$message({
+                        message: 'IP地址不合法!',
+                        type: 'error'
+                    });
+                    return;
+                }
+            } else if (index == 0) {
+            } else {
+                if (item.names.length <= 0) {
+                    this.$message({
+                        message: '请选择对应用户!',
+                        type: 'error'
+                    });
+                    return;
+                }
+                if (!this.cheackIP(item.key, index)) {
+                    this.$message({
+                        message: 'IP地址不合法!',
+                        type: 'error'
+                    });
+                    return;
                 }
             }
+            const h = this.$createElement;
+            this.$msgbox({
+                title: '消息',
+                message: ((index == 1) || (index == 2)) ? h('p', null, [
+                    h('span', null, "确认修改  "),
+                    h('b', {style: 'color: teal'}, item.key + ": " + item.names),
+                    h('span', null, '  吗?')
+                ]) : h('p', null, [
+                    h('span', null, "确认修改  "),
+                    h('b', {style: 'color: teal'}, item.key + ": " + item.value),
+                    h('span', null, '  吗?')
+                ]),
+                showCancelButton: true,
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                beforeClose: (action, instance, done) => {
+                    if (action === 'confirm') {
+                        instance.confirmButtonLoading = true;
+                        instance.confirmButtonText = '执行中...';
+                        setTimeout(() => {
+                            done();
+                            setTimeout(() => {
+                                instance.confirmButtonLoading = false;
+                            }, 300);
+                            var oldKey;
+                            switch (index) {
+                                case 0:
+                                    this.$http.post(api.mycat.properties.server.editMycatSystemConfig, {
+                                        key: item.key,
+                                        value: item.value
+                                    }).then(res => {
+                                        if (res.body.code == 200 && res.body.data) {
+                                            this.$message({
+                                                message: '修改成功!',
+                                                type: 'success'
+                                            });
+                                        } else {
+                                            this.$message({
+                                                message: '修改失败!',
+                                                type: 'error'
+                                            });
+                                        }
+                                    });
+                                    break;
+                                case 1:
+                                    oldKey = this.objToArr(this.MycatFirewallConfig.whitehost)[i].key;
+                                    this.$http.post(api.mycat.properties.server.editWhiteHostItem, {
+                                        oldKey: oldKey,
+                                        key: item.key,
+                                        value: JSON.stringify(item.names)
+                                    }).then(res => {
+                                        if (res.body.code == 200 && res.body.data) {
+                                            this.$message({
+                                                message: '修改成功!',
+                                                type: 'success'
+                                            });
+                                        } else {
+                                            this.$message({
+                                                message: '修改失败!',
+                                                type: 'error'
+                                            });
+                                        }
+                                    });
+                                    break;
+                                case 2:
+                                    oldKey = this.objToArr(this.MycatFirewallConfig.whitehostMask)[i].key, 2;
+                                    item = this.replaceIP(item, 1);
+                                    this.$http.post(api.mycat.properties.server.editWhiteHostMaskItem, {
+                                        oldKey: oldKey,
+                                        key: item.key,
+                                        value: JSON.stringify(item.names)
+                                    }).then(res => {
+                                        if (res.body.code == 200 && res.body.data) {
+                                            this.$message({
+                                                message: '修改成功!',
+                                                type: 'success'
+                                            });
+                                        } else {
+                                            this.$message({
+                                                message: '修改失败!',
+                                                type: 'error'
+                                            });
+                                        }
+                                    });
+                                    break;
+                                case 3:
+                                    this.$http.post(api.mycat.properties.server.editBlackItem, {
+                                        key: item.key,
+                                        value: item.value
+                                    }).then(res => {
+                                        if (res.body.code == 200 && res.body.data) {
+                                            this.$message({
+                                                message: '修改成功!',
+                                                type: 'success'
+                                            });
+                                        } else {
+                                            this.$message({
+                                                message: '修改失败!',
+                                                type: 'error'
+                                            });
+                                        }
+                                    });
+                                    break;
+                            }
+                            this.getFirewall();
+                        }, 3000);
+                    } else {
+                        done();
+                    }
+                }
+            });
+        },
+        delItem(item, index) {
+            const h = this.$createElement;
+            this.$msgbox({
+                title: '消息',
+                message: h('p', null, [
+                    h('span', null, "确认删除  "),
+                    h('b', {style: 'color: teal'}, item.key),
+                    h('span', null, '  吗?')
+                ]),
+                showCancelButton: true,
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                beforeClose: (action, instance, done) => {
+                    if (action === 'confirm') {
+                        instance.confirmButtonLoading = true;
+                        instance.confirmButtonText = '执行中...';
+                        setTimeout(() => {
+                            done();
+                            setTimeout(() => {
+                                instance.confirmButtonLoading = false;
+                            }, 300);
+                            switch (index) {
+                                case 1:
+                                    this.$http.post(api.mycat.properties.server.deleWhiteHostItem, {
+                                        key: item.key
+                                    }).then(res => {
+                                        if (res.body.code == 200 && res.body.data) {
+                                            this.$message({
+                                                message: '删除成功!',
+                                                type: 'success'
+                                            });
+                                        } else {
+                                            this.$message({
+                                                message: '删除失败!',
+                                                type: 'error'
+                                            });
+                                        }
+                                    });
+                                    break;
+                                case 2:
+                                    item = this.replaceIP(item, 1);
+                                    this.$http.post(api.mycat.properties.server.deleWhiteHostMaskItem, {
+                                        key: item.key
+                                    }).then(res => {
+                                        if (res.body.code == 200 && res.body.data) {
+                                            this.$message({
+                                                message: '删除成功!',
+                                                type: 'success'
+                                            });
+                                        } else {
+                                            this.$message({
+                                                message: '删除失败!',
+                                                type: 'error'
+                                            });
+                                        }
+                                    });
+                                    this.getFirewall();
+                                    break;
+                                case 3:
+                                    this.$http.post(api.mycat.properties.server.deleBlackItem, {
+                                        key: item.key,
+                                        value: item.value
+                                    }).then(res => {
+                                        if (res.body.code == 200 && res.body.data) {
+                                            this.$message({
+                                                message: '删除成功!',
+                                                type: 'success'
+                                            });
+                                        } else {
+                                            this.$message({
+                                                message: '删除失败!',
+                                                type: 'error'
+                                            });
+                                        }
+                                    });
+                                    break;
+                            }
+                            this.getFirewall();
+                        }, 3000);
+                    } else {
+                        done();
+                    }
+                }
+            });
+        },
+        addItem(index) {
+            var key;
+            if (index == 3) {
+                if (this.addBlackItem.key == undefined) {
+                    this.$message({
+                        message: '请输入黑名单名称!',
+                        type: 'error'
+                    });
+                    return;
+                }
+                if (!this.cheackIP(this.addBlackItem.value, index)) {
+                    this.$message({
+                        message: 'IP地址不合法!',
+                        type: 'error'
+                    });
+                    return;
+                }
+            } else {
+                if (index == 1) {
+                    key = this.addWhiteHost;
+                } else if (index == 2) {
+                    key = this.addWhiteHostMask;
+                }
+                if (key.names == undefined || key.names.length <= 0) {
+                    this.$message({
+                        message: '请选择对应用户!',
+                        type: 'error'
+                    });
+                    return;
+                }
+                if (!this.cheackIP(key.key, index)) {
+                    this.$message({
+                        message: 'IP地址不合法!',
+                        type: 'error'
+                    });
+                    return;
+                }
+            }
+            const h = this.$createElement;
+            this.$msgbox({
+                title: '消息',
+                message: (index == 3) ? h('p', null, [
+                    h('span', null, "确认添加  "),
+                    h('b', {style: 'color: teal'}, this.addBlackItem.key + ": " + this.addBlackItem.value),
+                    h('span', null, '  吗?')
+                ]) : h('p', null, [
+                    h('span', null, "确认添加  "),
+                    h('b', {style: 'color: teal'}, key.key + ": " + key.names),
+                    h('span', null, '  吗?')
+                ]),
+                showCancelButton: true,
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                beforeClose: (action, instance, done) => {
+                    if (action === 'confirm') {
+                        instance.confirmButtonLoading = true;
+                        instance.confirmButtonText = '执行中...';
+                        setTimeout(() => {
+                            done();
+                            setTimeout(() => {
+                                instance.confirmButtonLoading = false;
+                            }, 300);
+                            switch (index) {
+                                case 1:
+                                    this.$http.post(api.mycat.properties.server.addWhiteHostItem, {
+                                        key: key.key,
+                                        value: JSON.stringify(key.names)
+                                    }).then(res => {
+                                        if (res.body.code == 200 && res.body.data) {
+                                            this.$message({
+                                                message: '添加成功!',
+                                                type: 'success'
+                                            });
+                                        } else {
+                                            this.$message({
+                                                message: '添加失败!',
+                                                type: 'error'
+                                            });
+                                        }
+                                        this.addWhiteHost = {};
+                                        this.isAddWhiteHost = false;
+                                    });
+                                    break;
+                                case 2:
+                                    key = this.replaceIP(key, 1);
+                                    this.$http.post(api.mycat.properties.server.addWhiteHostMaskItem, {
+                                        key: key.key,
+                                        value: JSON.stringify(key.names)
+                                    }).then(res => {
+                                        if (res.body.code == 200 && res.body.data) {
+                                            this.$message({
+                                                message: '添加成功!',
+                                                type: 'success'
+                                            });
+                                        } else {
+                                            this.$message({
+                                                message: '添加失败!',
+                                                type: 'error'
+                                            });
+                                        }
+                                        this.addWhiteHostMask = {};
+                                        this.isAddWhiteHostMask = false;
+                                    });
+                                    break;
+                                case 3:
+                                    this.$http.post(api.mycat.properties.server.addBlackItem, {
+                                        key: this.addBlackItem.key,
+                                        value: this.addBlackItem.value
+                                    }).then(res => {
+                                        if (res.body.code == 200 && res.body.data) {
+                                            this.$message({
+                                                message: '添加成功!',
+                                                type: 'success'
+                                            });
+                                        } else {
+                                            this.$message({
+                                                message: '添加失败!',
+                                                type: 'error'
+                                            });
+                                        }
+                                        this.addBlackItem = {};
+                                        this.isAddBlackItem = false;
+                                    });
+                                    break;
+                            }
+                            this.getFirewall();
+                        }, 3000);
+                    } else {
+                        done();
+                    }
+                }
+            });
+        },
+        getConfig() {
+            this.$http.get(api.mycat.properties.server.getMycatSystemConfig).then(response => {
+                this.MycatSystemConfig = this.filterSystem(response.body.data);
+            });
+        },
+        getUsers() {
+            this.$http.get(api.mycat.properties.server.getMycatUsersConfig).then(response => {
+                let entries = Object.entries(response.body.data);
+                for (let i = 0; i < entries.length; i++) {
+                    if (entries[i] != undefined) {
+                        this.users.push({
+                            key: entries[i][0],
+                            value: this.filterUser(entries[i][1])
+                        });
+                    }
+                }
+            });
+        },
+        getFirewall() {
+            this.$http.get(api.mycat.properties.server.getMycatAllFirewallConfig).then(response => {
+                this.MycatFirewallConfig = response.body.data;
+                this.whiteHost = this.objToArr(this.MycatFirewallConfig.whitehost);
+                this.whiteHostMask = this.objToArr(this.MycatFirewallConfig.whitehostMask);
+                this.replaceIP(this.whiteHostMask);
+                this.blackList = this.objToArr(this.MycatFirewallConfig.blacklist);
+                this.loading = false;
+            });
         },
         strFormat(value) {
             return value.replace(/[;:]/g, "<br/>");
         },
-        editSystem(item) {
-            this.$http.post(api.mycat.properties.server.editMycatSystemConfig, {
-                key: item.key,
-                value: item.value
-            }).then(res => {
-                if (res.body.data) {
-                    this.$message({
-                        message: '修改成功!',
-                        type: 'success'
+        objToArr(obj) {
+            let entries = Object.entries(obj);
+            let arr = [];
+            for (let i = 0; i < entries.length; i++) {
+                if (entries[i] != undefined) {
+                    let names = [];
+                    let item = entries[i][1];
+                    if (item instanceof Array) {
+                        item.forEach(value => {
+                            names.push(value.name);
+                        });
+                    }
+                    arr.push({
+                        key: entries[i][0],
+                        value: item,
+                        names: names,
+                        index: i
                     });
                 }
-            })
+            }
+            return arr;
         },
         filterUser(user) {
             let u = [];

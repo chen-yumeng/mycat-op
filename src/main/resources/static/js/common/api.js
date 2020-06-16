@@ -24,16 +24,25 @@ let api = {
         },
         properties: {
             server: {
-                getMycatSystemConfig: '/mycat/properties/getMycatSystemConfig',
-                getMycatUsersConfig: '/mycat/properties/getMycatUsersConfig',
-                getMycatAllFirewallConfig: '/mycat/properties/getMycatAllFirewallConfig',
-                editMycatSystemConfig: '/mycat/properties/editMycatSystemConfig',
+                getMycatSystemConfig: '/mycat/properties/server/getMycatSystemConfig',
+                getMycatUsersConfig: '/mycat/properties/server/getMycatUsersConfig',
+                getMycatAllFirewallConfig: '/mycat/properties/server/getMycatAllFirewallConfig',
+                addBlackItem: '/mycat/properties/server/addBlackItem',
+                addWhiteHostItem: '/mycat/properties/server/addWhiteHostItem',
+                addWhiteHostMaskItem: '/mycat/properties/server/addWhiteHostMaskItem',
+                editWhiteHostItem: '/mycat/properties/server/editWhiteHostItem',
+                editWhiteHostMaskItem: '/mycat/properties/server/editWhiteHostMaskItem',
+                editBlackItem: '/mycat/properties/server/editBlackItem',
+                deleWhiteHostItem: '/mycat/properties/server/deleWhiteHostItem',
+                deleWhiteHostMaskItem: '/mycat/properties/server/deleWhiteHostMaskItem',
+                deleBlackItem: '/mycat/properties/server/deleBlackItem',
+                editMycatSystemConfig: '/mycat/properties/server/editMycatSystemConfig',
             },
             schema: {
-                getMycatSchemaConfig: '/mycat/properties/getMycatSchemaConfig',
+                getMycatSchemaConfig: '/mycat/properties/schema/getMycatSchemaConfig',
             },
             rule: {
-                getMycatRuleConfig: '/mycat/properties/getMycatRuleConfig',
+                getMycatRuleConfig: '/mycat/properties/rule/getMycatRuleConfig',
             }
         }
     },

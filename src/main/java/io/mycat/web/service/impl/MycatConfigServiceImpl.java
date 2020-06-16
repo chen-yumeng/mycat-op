@@ -8,6 +8,8 @@ import io.mycat.config.model.UserConfig;
 import io.mycat.web.service.MycatConfigService;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -55,13 +57,114 @@ public class MycatConfigServiceImpl implements MycatConfigService {
     @Override
     public FirewallConfig getAllFirewallConfig() {
         FirewallConfig firewall = config.getFirewall();
-        Map<Pattern, List<UserConfig>> mask = firewall.getWhitehostMask();
-        for (Map.Entry<Pattern, List<UserConfig>> entry : mask.entrySet()) {
-            String host = FirewallConfig.getHost(entry.getKey());
-            mask.put(Pattern.compile(host), entry.getValue());
-            mask.remove(entry.getKey());
-        }
         return firewall;
+    }
+
+    @Override
+    public void deleWhiteHostItem(String key) {
+        FirewallConfig firewall = config.getFirewall();
+        firewall.getWhitehost().remove(key);
+    }
+
+    @Override
+    public void deleWhiteHostMaskItem(String key) {
+        FirewallConfig firewall = config.getFirewall();
+        Map<Pattern, List<UserConfig>> whitehostMask = firewall.getWhitehostMask();
+        Map<Pattern, List<UserConfig>> newWhitehostMask = new HashMap<>();
+        whitehostMask.forEach((pattern, userConfigs) -> {
+            if (!key.equals(pattern.toString())) {
+                newWhitehostMask.put(pattern, userConfigs);
+            }
+        });
+        config.getFirewall().setWhitehostMask(newWhitehostMask);
+    }
+
+    @Override
+    public void deleBlackItem(String key, String value) {
+        FirewallConfig firewall = config.getFirewall();
+        firewall.getBlacklist().remove(key, value);
+    }
+
+    @Override
+    public boolean addWhiteHostItem(String key, List names) {
+        Map<String, List<UserConfig>> whitehost = config.getFirewall().getWhitehost();
+        if (whitehost.containsKey(key)) {
+            return false;
+        }
+        List<UserConfig> list = new ArrayList<>();
+        names.forEach(name -> {
+            config.getUsers().forEach((s, userConfig) -> {
+                if (s.equals(name)) {
+                    list.add(userConfig);
+                }
+            });
+        });
+        whitehost.put(key, list);
+        config.getFirewall().setWhitehost(whitehost);
+        return true;
+    }
+
+    @Override
+    public boolean addWhiteHostMaskItem(String key, List names) {
+        Map<Pattern, List<UserConfig>> whitehostMask = config.getFirewall().getWhitehostMask();
+        for (Pattern pattern : whitehostMask.keySet()) {
+            if (pattern.toString().equals(key)) {
+                return false;
+            }
+        }
+        List<UserConfig> list = new ArrayList<>();
+        names.forEach(name -> {
+            config.getUsers().forEach((s, userConfig) -> {
+                if (s.equals(name)) {
+                    list.add(userConfig);
+                }
+            });
+        });
+        whitehostMask.put(Pattern.compile(key), list);
+        config.getFirewall().setWhitehostMask(whitehostMask);
+        return true;
+    }
+
+    @Override
+    public void addBlackItem(String key, String value) {
+        FirewallConfig firewall = config.getFirewall();
+        firewall.getBlacklist().put(key, value);
+    }
+
+    @Override
+    public void editWhiteHostItem(String oldKey, String key, List names) {
+        FirewallConfig firewall = config.getFirewall();
+        Map<String, List<UserConfig>> whiteHost = firewall.getWhitehost();
+        whiteHost.remove(oldKey);
+        List<UserConfig> userConfigs = new ArrayList<>();
+        Map<String, UserConfig> users = config.getUsers();
+        names.forEach(name -> userConfigs.add(users.get(name)));
+        whiteHost.put(key, userConfigs);
+    }
+
+    @Override
+    public void editWhiteHostMaskItem(String oldKey, String key, List names) {
+        Map<Pattern, List<UserConfig>> whiteHostMask = config.getFirewall().getWhitehostMask();
+        Map<Pattern, List<UserConfig>> map = new HashMap<>();
+        List<UserConfig> list = new ArrayList<>();
+        Map<String, UserConfig> users = config.getUsers();
+        names.forEach(name -> list.add(users.get(name)));
+        whiteHostMask.forEach((pattern, userConfigs) -> {
+            if (!pattern.toString().equals(oldKey)) {
+                map.put(pattern, userConfigs);
+            }
+        });
+        map.put(Pattern.compile(key), list);
+        config.getFirewall().setWhitehostMask(map);
+    }
+
+    @Override
+    public void editBlackItem(String key, String value) {
+        config.getFirewall().getBlacklist().entrySet().forEach(stringObjectEntry -> {
+            if (stringObjectEntry.getKey().equals(key)) {
+                stringObjectEntry.setValue(value);
+            }
+        });
     }
 
     @Override

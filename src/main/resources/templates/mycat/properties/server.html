@@ -42,7 +42,7 @@
                             </el-table-column>
                             <el-table-column label="操作" width="80">
                                 <template slot-scope="scope">
-                                    <el-button type="primary" round size="mini" @click="editSystem(scope.row)">修改</el-button>
+                                    <el-button type="primary" round size="mini" @click="editItem(scope.row,0)">修改</el-button>
                                 </template>
                             </el-table-column>
                         </el-table>
@@ -75,34 +75,138 @@
                 <el-collapse-item title="firewall配置" name="2">
                     <el-card>
                         <el-divider content-position="left"><h3>Mycat firewall配置</h3></el-divider>
+                        <br>
+                        局域白名单可以使用通配符%或着*<br>
+                        例如&lt;host host="127.0.0.*" user="root"/&gt;
+                        <br>
+                        例如&lt;host host="127.0.*" user="root"/&gt;
+                        <br>
+                        例如&lt;host host="127.*" user="root"/&gt;
+                        <br>
+                        例如&lt;host host="1*7.*" user="root"/&gt;
+                        <br>
+                        这些配置情况下对于127.0.0.1都能以root账户登录
                         <el-collapse accordion>
-                            <el-collapse-item title="Mycat防火墙白名单" name="1">
+                            <el-collapse-item title="MycatSQL防火墙白名单" name="1">
+                                <el-button type="primary" round size="mini" @click="isAddWhiteHost=true,addWhiteHost={names:[]}">添加</el-button>
+                                <el-form :style="isAddWhiteHost?'display:block':'display:none'" :inline="true" :model="addWhiteHost" class="demo-form-inline">
+                                    <el-form-item label="白名单IP">
+                                        <el-input v-model="addWhiteHost.key"></el-input>
+                                    </el-form-item>
+                                    <el-form-item label="对应用户">
+                                        <el-checkbox-group v-model="addWhiteHost.names">
+                                            <el-checkbox v-for="user in users" :label="user.key" :key="user.key"></el-checkbox>
+                                        </el-checkbox-group>
+                                    </el-form-item>
+                                    <el-form-item>
+                                        <el-button type="primary" round size="mini" @click="addItem(1)">保存</el-button>
+                                    </el-form-item>
+                                    <el-form-item>
+                                        <el-button type="danger" round size="mini" @click="isAddWhiteHost=false,addWhiteHost={}">关闭</el-button>
+                                    </el-form-item>
+                                </el-form>
+                                <el-table :data="whiteHost" size="small" v-loading="loading"
+                                          element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border
+                                          fit highlight-current-row>
+                                    <el-table-column prop="key" label="IP地址">
+                                        <template slot-scope="scope">
+                                            <el-input v-model="scope.row.key"></el-input>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="对应用户">
+                                        <template slot-scope="scope">
+                                            <el-checkbox-group v-model="scope.row.names">
+                                                <el-checkbox v-for="user in users" :label="user.key" :key="user.key"></el-checkbox>
+                                            </el-checkbox-group>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="操作">
+                                        <template slot-scope="scope">
+                                            <el-button type="primary" round size="mini" @click="editItem(scope.row,1,scope.row.index)">修改</el-button>
+                                            <el-button type="danger" round size="mini" @click="delItem(scope.row,1)">删除</el-button>
+                                        </template>
+                                    </el-table-column>
+                                </el-table>
                             </el-collapse-item>
-                            <el-collapse-item title="Mycat防火墙局域白名单" name="2">
+                            <el-collapse-item title="MycatSQL防火墙局域白名单" name="2">
+                                <el-button type="primary" round size="mini" @click="isAddWhiteHostMask=true,addWhiteHostMask={names:[]}">添加</el-button>
+                                <el-form :style="isAddWhiteHostMask?'display:block':'display:none'" :inline="true" :model="addWhiteHostMask" class="demo-form-inline">
+                                    <el-form-item label="局域白名单IP">
+                                        <el-input v-model="addWhiteHostMask.key"></el-input>
+                                    </el-form-item>
+                                    <el-form-item label="对应用户">
+                                        <el-checkbox-group v-model="addWhiteHostMask.names">
+                                            <el-checkbox v-for="user in users" :label="user.key" :key="user.key"></el-checkbox>
+                                        </el-checkbox-group>
+                                    </el-form-item>
+                                    <el-form-item>
+                                        <el-button type="primary" round size="mini" @click="addItem(2)">保存</el-button>
+                                    </el-form-item>
+                                    <el-form-item>
+                                        <el-button type="danger" round size="mini" @click="isAddWhiteHostMask=false,addWhiteHostMask={}">关闭</el-button>
+                                    </el-form-item>
+                                </el-form>
+                                <el-table :data="whiteHostMask" size="small" v-loading="loading"
+                                          element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border
+                                          fit highlight-current-row>
+                                    <el-table-column prop="key" label="IP地址">
+                                        <template slot-scope="scope">
+                                            <el-input v-model="scope.row.key"></el-input>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="对应用户">
+                                        <template slot-scope="scope">
+                                            <el-checkbox-group v-model="scope.row.names">
+                                                <el-checkbox v-for="user in users" :label="user.key" :key="user.key"></el-checkbox>
+                                            </el-checkbox-group>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="操作">
+                                        <template slot-scope="scope">
+                                            <el-button type="primary" round size="mini" @click="editItem(scope.row,2,scope.row.index)">修改</el-button>
+                                            <el-button type="danger" round size="mini" @click="delItem(scope.row,2)">删除</el-button>
+                                        </template>
+                                    </el-table-column>
+                                </el-table>
                             </el-collapse-item>
-                            <el-collapse-item title="Mycat防火墙黑名单" name="3">
+                            <el-collapse-item title="MycatSQL防火墙黑名单" name="3">
+                                <el-button type="primary" round size="mini" @click="isAddBlackItem=true,addBlackItem={}">添加</el-button>
+                                <el-form :style="isAddBlackItem?'display:block':'display:none'" :inline="true" :model="addBlackItem" class="demo-form-inline">
+                                    <el-form-item label="黑名单">
+                                        <el-input v-model="addBlackItem.key"></el-input>
+                                    </el-form-item>
+                                    <el-form-item label="IP地址">
+                                        <el-input v-model="addBlackItem.value"></el-input>
+                                    </el-form-item>
+                                    <el-form-item>
+                                        <el-button type="primary" round size="mini" @click="addItem(3)">保存</el-button>
+                                    </el-form-item>
+                                    <el-form-item>
+                                        <el-button type="danger" round size="mini" @click="isAddBlackItem=false,addBlackItem={}">关闭</el-button>
+                                    </el-form-item>
+                                </el-form>
+                                <el-table :data="blackList" size="small" v-loading="loading"
+                                          element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border
+                                          fit highlight-current-row>
+                                    <el-table-column prop="key" label="黑名单">
+                                        <template slot-scope="scope">
+                                            {{scope.row.key}}
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="IP地址">
+                                        <template slot-scope="scope">
+                                            <el-input v-model="scope.row.value"></el-input>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="操作">
+                                        <template slot-scope="scope">
+                                            <el-button type="primary" round size="mini" @click="editItem(scope.row,3)">修改</el-button>
+                                            <el-button type="danger" round size="mini" @click="delItem(scope.row,3)">删除</el-button>
+                                        </template>
+                                    </el-table-column>
+                                </el-table>
                             </el-collapse-item>
                         </el-collapse>
-                        <el-table :data="MycatSystemConfig" size="small" v-loading="loading"
-                                  element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border fit
-                                  highlight-current-row>
-                            <el-table-column prop="key" label="参数名称">
-                                <template slot-scope="scope">
-                                    <span>{{scope.row.key}}</span><br>
-                                    <span>{{scope.row.name}}</span>
-                                </template>
-                            </el-table-column>
-                            <el-table-column label="参数值" width="400">
-                                <template slot-scope="scope">
-                                    <el-input v-model="scope.row.value"></el-input>
-                                </template>
-                            </el-table-column>
-                            <el-table-column label="操作" width="80">
-                                <template slot-scope="scope">
-                                    <el-button type="primary" round size="mini" @click="edit(scope.row)">修改</el-button>
-                                </template>
-                            </el-table-column>
-                        </el-table>
                     </el-card>
                 </el-collapse-item>
             </el-collapse>
