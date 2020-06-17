@@ -31,21 +31,6 @@ public class MycatConfigServiceImpl implements MycatConfigService {
 
     @Override
     public SystemConfig getSystemConfig() {
-        //System.out.println(config.getFirewall().getWhitehost());
-        //System.out.println(config.getFirewall().getWhitehostMask());
-        //System.out.println(config.getFirewall().getBlacklist());
-        //System.out.println(config.getFirewall().isCheck());
-        //Map<Pattern, List<UserConfig>> whitehostMask = config.getFirewall().getWhitehostMask();
-        //for (Pattern pattern : whitehostMask.keySet()) {
-        //    List<UserConfig> userConfigs = whitehostMask.get(pattern);
-        //    String host = FirewallConfig.getHost(pattern);
-        //    System.out.println(host);
-        //}
-        //System.out.println(whitehostMask);
-        FirewallConfig firewallConfig = getAllFirewallConfig();
-        System.out.println(firewallConfig.getWhitehost());
-        System.out.println(firewallConfig.getWhitehostMask());
-        System.out.println(firewallConfig.getBlacklist());
         return config.getSystem();
     }
 
