@@ -80,18 +80,42 @@
                 <div slot="header" class="clearfix">
                     <el-divider content-position="left"><h3>Mycat防火墙白名单</h3></el-divider>
                 </div>
-                <div v-for="o in 4" :key="o" class="text item">
-                    {{ o }}
-                </div>
+                <el-table :data="MycatFirewallConfig" size="small" v-loading="loading"
+                          element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border
+                          fit highlight-current-row>
+                    <el-table-column prop="key" label="IP地址">
+                        <template slot-scope="scope">
+                            {{scope.row.key}}
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="对应用户">
+                        <template slot-scope="scope">
+                            <el-checkbox-group v-model="scope.row.names">
+                                <el-checkbox v-for="user in scope.row.names" :label="user" :key="user" disabled></el-checkbox>
+                            </el-checkbox-group>
+                        </template>
+                    </el-table-column>
+                </el-table>
             </el-card>
             <br>
             <el-card class="box-card" shadow="always">
                 <div slot="header" class="clearfix ">
-                    <el-divider content-position="left" style="background-color: #FF5D48;"><h3>Mycat防火墙黑名单</h3></el-divider>
+                    <el-divider content-position="left"><h3>Mycat防火墙黑名单</h3></el-divider>
                 </div>
-                <div v-for="o in 4" :key="o" class="text item ">
-                    {{ o }}
-                </div>
+                <el-table :data="blackList" size="small" v-loading="loading"
+                          element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border
+                          fit highlight-current-row>
+                    <el-table-column prop="key" label="黑名单">
+                        <template slot-scope="scope">
+                            {{scope.row.key}}
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="IP地址">
+                        <template slot-scope="scope">
+                            {{scope.row.value}}
+                        </template>
+                    </el-table-column>
+                </el-table>
             </el-card>
             <br>
 
