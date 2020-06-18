@@ -27,8 +27,7 @@
                     <el-card>
                         <el-divider content-position="left"><h3>Mycat system配置</h3></el-divider>
                         <el-table :data="MycatSystemConfig" size="small" v-loading="loading"
-                                  element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border fit
-                                  highlight-current-row>
+                                  element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border fit highlight-current-row>
                             <el-table-column prop="key" label="参数名称">
                                 <template slot-scope="scope">
                                     <span>{{scope.row.key}}</span><br>
@@ -53,9 +52,7 @@
                         <el-divider content-position="left"><h3>Mycat user配置</h3></el-divider>
                         <el-collapse accordion>
                             <el-collapse-item v-for="user in users" :title="'用户'+user.key+'的配置'" :name="user.key">
-                                <el-table :data="user.value" size="small" v-loading="loading"
-                                          element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border
-                                          fit highlight-current-row>
+                                <el-table :data="user.value" size="small" v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border>
                                     <el-table-column prop="key" label="参数名称">
                                         <template slot-scope="scope">
                                             {{scope.row.key}}<br>
@@ -79,17 +76,18 @@
                         局域白名单可以使用通配符%或着*<br>
                         例如&lt;host host="127.0.0.*" user="root"/&gt;
                         <br>
-                        例如&lt;host host="127.0.*" user="root"/&gt;
+                        例如&lt;host host="1*7.0.0.*" user="root"/&gt;
                         <br>
-                        例如&lt;host host="127.*" user="root"/&gt;
+                        例如&lt;host host="127.*.*.*" user="root"/&gt;
                         <br>
-                        例如&lt;host host="1*7.*" user="root"/&gt;
+                        例如&lt;host host="12*.*.*.*" user="root"/&gt;
                         <br>
                         这些配置情况下对于127.0.0.1都能以root账户登录
                         <el-collapse accordion>
                             <el-collapse-item title="MycatSQL防火墙白名单" name="1">
                                 <el-button type="primary" round size="mini" @click="isAddWhiteHost=true,addWhiteHost={names:[]}">添加</el-button>
-                                <el-form :style="isAddWhiteHost?'display:block':'display:none'" :inline="true" :model="addWhiteHost" class="demo-form-inline">
+                                <el-form :style="isAddWhiteHost?'display:block':'display:none'" :inline="true"
+                                         :model="addWhiteHost" class="demo-form-inline">
                                     <el-form-item label="白名单IP">
                                         <el-input v-model="addWhiteHost.key"></el-input>
                                     </el-form-item>
@@ -105,9 +103,7 @@
                                         <el-button type="danger" round size="mini" @click="isAddWhiteHost=false,addWhiteHost={}">关闭</el-button>
                                     </el-form-item>
                                 </el-form>
-                                <el-table :data="whiteHost" size="small" v-loading="loading"
-                                          element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border
-                                          fit highlight-current-row>
+                                <el-table :data="whiteHost" size="small" v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border>
                                     <el-table-column prop="key" label="IP地址">
                                         <template slot-scope="scope">
                                             <el-input v-model="scope.row.key"></el-input>
@@ -146,9 +142,7 @@
                                         <el-button type="danger" round size="mini" @click="isAddWhiteHostMask=false,addWhiteHostMask={}">关闭</el-button>
                                     </el-form-item>
                                 </el-form>
-                                <el-table :data="whiteHostMask" size="small" v-loading="loading"
-                                          element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border
-                                          fit highlight-current-row>
+                                <el-table :data="whiteHostMask" size="small" v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border>
                                     <el-table-column prop="key" label="IP地址">
                                         <template slot-scope="scope">
                                             <el-input v-model="scope.row.key"></el-input>
@@ -185,9 +179,7 @@
                                         <el-button type="danger" round size="mini" @click="isAddBlackItem=false,addBlackItem={}">关闭</el-button>
                                     </el-form-item>
                                 </el-form>
-                                <el-table :data="blackList" size="small" v-loading="loading"
-                                          element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border
-                                          fit highlight-current-row>
+                                <el-table :data="blackList" size="small" v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border>
                                     <el-table-column prop="key" label="黑名单">
                                         <template slot-scope="scope">
                                             {{scope.row.key}}

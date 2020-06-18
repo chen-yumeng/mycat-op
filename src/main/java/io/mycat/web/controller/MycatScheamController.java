@@ -27,4 +27,24 @@ public class MycatScheamController {
             return new ResultCode(500, e.getMessage());
         }
     }
+
+    @GetMapping("/mycat/properties/schema/getMycatDataHostsConfig")
+    public ResultCode getMycatDataHostsConfig() {
+        try {
+            return new ResultCode(200, schemaServer.getMycatDataHostsConfig());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResultCode(500, e.getMessage());
+        }
+    }
+
+    @GetMapping("/mycat/properties/schema/getMycatDataNodesConfig")
+    public ResultCode getMycatDataNodesConfig() {
+        try {
+            return new ResultCode(200, schemaServer.getMycatDataNodesConfig());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResultCode(500, e.getMessage());
+        }
+    }
 }

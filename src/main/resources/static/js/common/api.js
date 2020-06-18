@@ -40,6 +40,8 @@ let api = {
             },
             schema: {
                 getMycatSchemaConfig: '/mycat/properties/schema/getMycatSchemaConfig',
+                getMycatDataHostsConfig: '/mycat/properties/schema/getMycatDataHostsConfig',
+                getMycatDataNodesConfig: '/mycat/properties/schema/getMycatDataNodesConfig',
             },
             rule: {
                 getMycatRuleConfig: '/mycat/properties/rule/getMycatRuleConfig',

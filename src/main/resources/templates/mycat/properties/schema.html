@@ -4,6 +4,11 @@
     <meta charset="utf-8">
     <title>Mycat | schema配置</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
+    <style>
+        .el-table tbody tr:hover>td {
+            background-color:#ffffff!important
+        }
+    </style>
     <div th:replace="common/css"></div>
 </head>
 <body>
@@ -18,11 +23,141 @@
 
         <!-- main -->
         <el-main class="app-main">
-            {{MycatSchemaConfig}}
             <el-card>
-                <el-divider content-position="left"><h3>Mycat schema配置数据</h3></el-divider>
+                <el-divider content-position="left"><h3>Mycat schema.xml配置数据 暂时不支持修改参数</h3></el-divider>
             </el-card>
-<!--            <el-tree :data="MycatSchemaConfig" default-expand-all="true" :props="defaultProps"></el-tree>-->
+            <el-collapse accordion>
+                <el-collapse-item title="schema配置" name="1">
+                    <el-collapse accordion>
+                        <el-collapse-item v-for="schema in MycatSchemaConfig" :title="schema.key+'配置'" :name="schema.index">
+                            <el-table :data="schema.value" size="small" v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border>
+                                <el-table-column prop="key" label="参数名称">
+                                    <template slot-scope="scope">
+                                        <span>{{scope.row.key}}</span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="参数值">
+                                    <template slot-scope="scope">
+                                        <div v-if="scope.row.key=='tables'">
+                                            <el-collapse accordion>
+                                                <el-collapse-item v-for="table in scope.row.value" :title="table.key+'配置'" :name="table.index">
+                                                    <el-table :data="table.value" size="small" v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border>
+                                                        <el-table-column prop="key" label="参数名称">
+                                                            <template slot-scope="scope">
+                                                                <div v-if="scope.row.key=='reentrantReadWriteLock'"></div>
+                                                                <div v-else>{{scope.row.key}}</div>
+                                                            </template>
+                                                        </el-table-column>
+                                                        <el-table-column prop="value" label="参数值">
+                                                            <template slot-scope="scope">
+                                                                <div v-if="scope.row.key=='dataNodes'">
+                                                                    <span v-for="item in scope.row.value">{{item+' '}}</span>
+                                                                </div>
+                                                                <div v-else-if="scope.row.key=='reentrantReadWriteLock'"></div>
+                                                                <div v-else-if="scope.row.key=='rule'">
+                                                                    <table class="el-table">
+                                                                        <tr>
+                                                                            <td>column</td>
+                                                                            <td>{{scope.row.value.column}}</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td>functionName</td>
+                                                                            <td>{{scope.row.value.functionName}}</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td>ruleAlgorithm</td>
+                                                                            <td>{{scope.row.value.ruleAlgorithm}}</td>
+                                                                        </tr>
+                                                                    </table>
+                                                                </div>
+                                                                <div v-else>{{scope.row.value==null?'无':scope.row.value}}</div>
+                                                            </template>
+                                                        </el-table-column>
+                                                    </el-table>
+                                                </el-collapse-item>
+                                            </el-collapse>
+                                        </div>
+                                        <div v-else-if="scope.row.key=='dataNodeDbTypeMap'">
+                                            <el-table :data="scope.row.value" size="small" v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border>
+                                                <el-table-column prop="key" label="DataNode名称">
+                                                    <template slot-scope="scope">{{scope.row.key}}</template>
+                                                </el-table-column>
+                                                <el-table-column prop="value" label="数据库类型">
+                                                    <template slot-scope="scope">{{scope.row.value}}</template>
+                                                </el-table-column>
+                                            </el-table>
+                                        </div>
+                                        <div v-else-if="scope.row.key=='allDataNodes'">
+                                            <span v-for="item in scope.row.value">{{item+' '}}</span>
+                                        </div>
+                                        <div v-else>{{scope.row.value==null?'无':scope.row.value}}</div>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                        </el-collapse-item>
+                    </el-collapse>
+                </el-collapse-item>
+                <el-collapse-item title="dataHost配置" name="2">
+                    <el-collapse accordion>
+                        <el-collapse-item v-for="(DataHost, index) in MycatDataHostsConfig" :title="DataHost[0].value+'配置'" :name="index">
+                            <el-table :data="DataHost" size="small" v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border>
+                                <el-table-column label="参数名称">
+                                    <template slot-scope="scope">{{scope.row.key}}</template>
+                                </el-table-column>
+                                <el-table-column label="参数值">
+                                    <template slot-scope="scope">
+                                        <div v-if="scope.row.key=='writeHosts'">
+                                            <el-collapse accordion>
+                                                <el-collapse-item v-for="(writeHost, index) in scope.row.value" :title="writeHost[1].value+'配置'" :name="index">
+                                                    <el-table :data="writeHost" size="small" v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border>
+                                                        <el-table-column label="参数名称">
+                                                            <template slot-scope="scope">{{scope.row.key}}</template>
+                                                        </el-table-column>
+                                                        <el-table-column label="参数值">
+                                                            <template slot-scope="scope">
+                                                                <div v-if="scope.row.key=='filters'">{{scope.row.value==''?'空':scope.row.value}}</div>
+                                                                <div v-else>{{scope.row.value}}</div>
+                                                            </template>
+                                                        </el-table-column>
+                                                    </el-table>
+                                                </el-collapse-item>
+                                            </el-collapse>
+                                        </div>
+                                        <div v-else-if="scope.row.key=='readHosts'">
+                                            <div v-if="Object.keys(scope.row.value).length==0">空</div>
+                                            <div v-else>
+                                                <el-collapse accordion>
+                                                    <el-collapse-item v-for="(item, index) in scope.row.value" :title="'writeHost'+(index+1)" :name="index">
+                                                        <el-collapse accordion>
+                                                            <el-collapse-item v-for="(readHost, index) in item" :title="readHost.value[1].value" :name="index">
+                                                                <el-table :data="readHost.value" size="small" v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border>
+                                                                    <el-table-column label="参数名称">
+                                                                        <template slot-scope="scope">{{scope.row.key}}</template>
+                                                                    </el-table-column>
+                                                                    <el-table-column label="参数值">
+                                                                        <template slot-scope="scope">
+                                                                            <div v-if="scope.row.key=='filters'">{{scope.row.value==''?'空':scope.row.value}}</div>
+                                                                            <div v-else>{{scope.row.value}}</div>
+                                                                        </template>
+                                                                    </el-table-column>
+                                                                </el-table>
+                                                            </el-collapse-item>
+                                                        </el-collapse>
+                                                    </el-collapse-item>
+                                                </el-collapse>
+                                            </div>
+                                        </div>
+                                        <div v-else-if="(scope.row.key=='connectionInitSql')||(scope.row.key=='filters')||(scope.row.key=='slaveIDs')">
+                                            {{((scope.row.value==null)||(scope.row.value==''))?'空':scope.row.value}}
+                                        </div>
+                                        <div v-else>{{scope.row.value}}</div>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                        </el-collapse-item>
+                    </el-collapse>
+                </el-collapse-item>
+            </el-collapse>
         </el-main>
     </el-container>
 </div>

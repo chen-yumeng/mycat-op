@@ -81,7 +81,7 @@ public class PhysicalDBPool {
 
     protected final ReentrantLock switchLock = new ReentrantLock();
     private final Collection<PhysicalDatasource> allDs;
-    private final int banlance;
+    private final int balance;
     private final int writeType;
     private final Random random = new Random();
     private final Random wnrandom = new Random();
@@ -89,6 +89,10 @@ public class PhysicalDBPool {
     private final DataHostConfig dataHostConfig;
     private String slaveIDs;
     private LoadBalance loadBalance;
+
+    public DataHostConfig getDataHostConfig() {
+        return dataHostConfig;
+    }
 
     public PhysicalDBPool(String name, DataHostConfig conf,
                           PhysicalDatasource[] writeSources,
@@ -98,7 +102,7 @@ public class PhysicalDBPool {
         this.hostName = name;
         this.dataHostConfig = conf;
         this.writeSources = writeSources;
-        this.banlance = balance;
+        this.balance = balance;
         this.writeType = writeType;
 
         switch (dataHostConfig.getBalanceType()) {
@@ -524,7 +528,7 @@ public class PhysicalDBPool {
 
         PhysicalDatasource theNode = null;
         ArrayList<PhysicalDatasource> okSources = null;
-        switch (banlance) {
+        switch (balance) {
             // 所有读写节点参与read请求的负载均衡，除了当前活跃的写节点，balance=1
             case BALANCE_ALL_BACK: {
                 // all read nodes and the standard by masters
@@ -710,7 +714,7 @@ public class PhysicalDBPool {
 
     //
     public int getBalance() {
-        return banlance;
+        return balance;
     }
 
     private boolean isAlive(PhysicalDatasource theSource) {

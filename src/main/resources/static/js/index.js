@@ -7,6 +7,8 @@ let app = new Vue({
         time: null,
         MycatFirewallConfig: [],
         blackList: [],
+        dataNodes:[],
+        loading: true,
     },
     created() {
         this.init(); //初始化
@@ -19,13 +21,15 @@ let app = new Vue({
          * 初始化 启动
          */
         init() {
-            this.$http.get(api.mycat.jvm.runtime.get).then(response => {
-                this.time = this.getTime(response.body.data.startTime, new Date().getTime());
-            });
-            this.$http.get(api.mycat.properties.schema.getMycatSchemaConfig).then(res => {
-
-            });
+            this.getTime();
             this.getFirewall();
+            this.getDataNodes();
+            this.loading = false;
+        },
+        getDataNodes() {
+            this.$http.get(api.mycat.properties.schema.getMycatDataNodesConfig).then(res => {
+                this.dataNodes = res.body.data;
+            });
         },
         getFirewall() {
             this.$http.get(api.mycat.properties.server.getMycatAllFirewallConfig).then(response => {
@@ -72,12 +76,12 @@ let app = new Vue({
             }
             return arr;
         },
-        getTime(start, now) {
-            if (start != undefined && now != undefined) {
-                let millisecond = now - start;
+        getTime() {
+            this.$http.get(api.mycat.jvm.runtime.get).then(response => {
+                let millisecond = new Date().getTime() - response.body.data.startTime;
                 let min = Math.floor((millisecond / 1000 / 60) << 0);
-                return min;
-            }
+                this.time = min;
+            });
         },
     },
 });
