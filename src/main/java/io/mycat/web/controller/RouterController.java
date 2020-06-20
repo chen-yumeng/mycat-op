@@ -101,4 +101,13 @@ public class RouterController {
     public String rule() {
         return "mycat/properties/rule";
     }
+
+    /**
+     * 登录页面
+     * @return
+     */
+    @GetMapping("/login")
+    public String goLogin() {
+        return "login";
+    }
 }

@@ -1,6 +1,10 @@
 server:
   port: 8085
 
+admin:
+  username: admin
+  password: 123456
+
 spring:
 
   #thymeleaf模板引擎

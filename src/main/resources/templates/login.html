@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>Mycat监控系统</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <div th:replace="common/css"></div>
+    <link rel="stylesheet" data-th-href="@{/css/login.css}">
+</head>
+<body class="backColor">
+<!-- vue入口 -->
+<div id="app">
+    <div class="login">
+        <div class="login-top">
+            登录
+        </div>
+        <div class="login-center clearfix">
+            <div class="login-center-img"><i class="fa fa-user" style="font-size: 30px"></i></div>
+            <div class="login-center-input">
+                <input type="text" id="username" name="username" placeholder="请输入您的用户名" onfocus="this.placeholder=''" onblur="this.placeholder='请输入您的用户名'" />
+                <div class="login-center-input-text">用户名</div>
+            </div>
+        </div>
+        <div class="login-center clearfix">
+            <div class="login-center-img"><i class="fa fa-lock" style="font-size: 30px"></i></div>
+            <div class="login-center-input">
+                <input type="password" id="password" name="password" placeholder="请输入您的密码" onfocus="this.placeholder=''" onblur="this.placeholder='请输入您的密码'" />
+                <div class="login-center-input-text">密码</div>
+            </div>
+        </div>
+        <div class="login-button" onclick="login()">
+            登陆
+        </div>
+    </div>
+    <!-- 点击登陆 进度显示 -->
+    <div class="sk-rotating-plane"></div>
+</div>
+<div th:replace="common/js"></div>
+<script type="text/javascript" th:src="@{/js/login.js}"></script>
+</body>
+</html>
