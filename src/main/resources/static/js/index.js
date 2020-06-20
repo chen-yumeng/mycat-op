@@ -1,5 +1,5 @@
 // Vue实例
-let app = new Vue({
+var app = new Vue({
     el: '#app',
     data: {
         defaultActive: '首页',
@@ -7,7 +7,8 @@ let app = new Vue({
         time: null,
         MycatFirewallConfig: [],
         blackList: [],
-        dataNodes:[],
+        dataNodes: [],
+        memory: null,
         loading: true,
     },
     created() {
@@ -15,6 +16,14 @@ let app = new Vue({
     },
     mounted() {
         this.$refs.loader.style.display = 'none';
+    },
+    watch: {
+        memory() {
+            this.timer();
+        }
+    },
+    destroyed() {
+        clearTimeout(this.timer)
     },
     methods: {
         /**
@@ -24,7 +33,21 @@ let app = new Vue({
             this.getTime();
             this.getFirewall();
             this.getDataNodes();
+            this.getMemory();
             this.loading = false;
+        },
+        timer() {
+            return setTimeout(()=>{
+                this.getMemory();
+                this.getTime();
+            },6e3)
+        },
+        getMemory() {
+            this.$http.get(api.mycat.jvm.memory.get).then(response => {
+                if (response.body.code == 200) {
+                    this.memory = (response.body.data.used / 1024 / 1024).toFixed(2);
+                }
+            })
         },
         getDataNodes() {
             this.$http.get(api.mycat.properties.schema.getMycatDataNodesConfig).then(res => {
