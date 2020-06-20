@@ -1,5 +1,8 @@
 package io.mycat.web.service;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * @program: mycat->MycatRuleServer
  * @description:
@@ -12,6 +15,6 @@ public interface MycatRuleServer {
      * 获取Mycat rule配置
      * @return
      */
-    String getRuleConfig();
+    List<Map> getRuleConfig();
 
 }

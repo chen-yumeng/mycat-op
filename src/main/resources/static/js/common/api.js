@@ -4,6 +4,9 @@ Vue.http.options.emulateJSON = true;
 //前端API访问接口
 let api = {
     mycat : {
+        login: {
+            login: '/mycat/login',
+        },
         jvm: {
             runtime: {
                 get: '/mycat/runtime/get',

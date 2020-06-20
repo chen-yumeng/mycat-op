@@ -2,8 +2,15 @@ package io.mycat.web.service.impl;
 
 import io.mycat.MycatServer;
 import io.mycat.config.MycatConfig;
+import io.mycat.config.loader.xml.XMLRuleLoader;
+import io.mycat.config.model.rule.TableRuleConfig;
+import io.mycat.route.function.AbstractPartitionAlgorithm;
 import io.mycat.web.service.MycatRuleServer;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @program: mycat->MycatRuleServerImpl
@@ -21,8 +28,14 @@ public class MycatRuleServerImpl implements MycatRuleServer {
     }
 
     @Override
-    public String getRuleConfig() {
-        return null;
+    public List<Map> getRuleConfig() {
+        XMLRuleLoader ruleLoader = new XMLRuleLoader(null);
+        Map<String, TableRuleConfig> tableRules = ruleLoader.getTableRules();
+        Map<String, AbstractPartitionAlgorithm> functions = ruleLoader.getFunctions();
+        List<Map> list = new ArrayList<>();
+        list.add(tableRules);
+        list.add(functions);
+        return list;
     }
 
 }

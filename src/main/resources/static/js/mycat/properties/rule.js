@@ -5,7 +5,9 @@ let app = new Vue({
         defaultActive: 'Mycat rule配置',
         data: {},
         loading: true,
-        MycatSystemConfig: {},
+        MycatRuleConfig: {},
+        tableRule: [],
+        functions: [],
     },
     created() {
         this.init(); //初始化
@@ -18,26 +20,35 @@ let app = new Vue({
          * 初始化
          */
         init() {
-            this.loading = true;
-            this.$http.get(api.mycat.jvm.runtime.get).then(response => {
-                this.data = response.body.data;
-                this.loading = false;
+            this.$http.get(api.mycat.properties.rule.getMycatRuleConfig).then(response => {
+                this.MycatRuleConfig = response.body.data;
+                this.functions = this.objToArr(this.MycatRuleConfig[0]);
+                this.functions.forEach(value => {
+                    value.value.rule = Object.entries(value.value.rule);
+                    value.value.rule[2][1] = this.objToArr(value.value.rule[2][1]);
+                    console.log(value.value);
+                });
+                this.tableRule = this.objToArr(this.MycatRuleConfig[1]);
+                this.tableRule.forEach(value => {
+                    value.value = Object.entries(value.value);
+                });
             });
-            this.$http.get(api.mycat.jvm.mycat.getMycatSystemConfig).then(response => {
-                this.MycatSystemConfig = this.getMycat(response.body.data);
-            });
+            this.loading = false;
         },
-        getMycat(MycatSystemConfig) {
-            let entries = Object.entries(MycatSystemConfig);
-            let mycat = [];
-            entries.forEach(value => {
-                let item = {
-                    key: value[0]+"",
-                    value: value[1]+""
-                };
-                mycat.push(item);
-            });
-            return mycat;
+        objToArr(obj) {
+            let entries = Object.entries(obj);
+            let arr = [];
+            for (let i = 0; i < entries.length; i++) {
+                if (entries[i] != undefined) {
+                    let item = entries[i][1];
+                    arr.push({
+                        key: entries[i][0],
+                        value: item,
+                        index: i
+                    });
+                }
+            }
+            return arr;
         },
         strFormat(value) {
             return value.replace(/[;:]/g, "<br/>");

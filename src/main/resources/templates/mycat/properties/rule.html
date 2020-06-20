@@ -19,7 +19,65 @@
         <!-- main -->
         <el-main class="app-main">
             <el-card>
-                <el-divider content-position="left"><h3>Mycat基础数据</h3></el-divider>
+                <el-divider content-position="left"><h3>Mycat rule.xml配置数据 暂时不支持修改参数</h3></el-divider>
+                <el-collapse accordion>
+                    <el-collapse-item title="tableRule" name="1">
+                        <el-table :data="tableRule" size="small" v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border>
+                            <el-table-column label="参数名称">
+                                <template slot-scope="scope">{{scope.row.key}}</template>
+                            </el-table-column>
+                            <el-table-column label="参数值">
+                                <template slot-scope="scope">
+                                    <el-table :data="scope.row.value" size="small" v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border>
+                                        <el-table-column label="参数名称">
+                                            <template slot-scope="scope">
+                                                {{scope.row[0]}}
+                                            </template>
+                                        </el-table-column>
+                                        <el-table-column label="参数值">
+                                            <template slot-scope="scope">
+                                                {{scope.row[1]==null?'空':scope.row[1]}}
+                                            </template>
+                                        </el-table-column>
+                                    </el-table>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </el-collapse-item>
+                    <el-collapse-item title="functions" name="2">
+                        <el-table :data="functions" size="small" v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border>
+                            <el-table-column label="function名称">
+                                <template slot-scope="scope">{{scope.row.value.name}}</template>
+                            </el-table-column>
+                            <el-table-column label="对应规则">
+                                <template slot-scope="scope">
+                                    <el-table :data="scope.row.value.rule" size="small" v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border>
+                                        <el-table-column label="参数名称">
+                                            <template slot-scope="scope">
+                                                {{scope.row[0]}}
+                                            </template>
+                                        </el-table-column>
+                                        <el-table-column label="参数值">
+                                            <template slot-scope="scope">
+                                                <div v-if="scope.row[0]=='ruleAlgorithm'">
+                                                    <el-table :data="scope.row[1]" size="small" v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border>
+                                                        <el-table-column prop="key" label="参数名称"></el-table-column>
+                                                        <el-table-column label="参数值">
+                                                            <template slot-scope="scope">
+                                                                {{(scope.row.value==null)||(scope.row.value==undefined)?'空':scope.row.value}}
+                                                            </template>
+                                                        </el-table-column>
+                                                    </el-table>
+                                                </div>
+                                                <div v-else>{{scope.row[1]==null?'空':scope.row[1]}}</div>
+                                            </template>
+                                        </el-table-column>
+                                    </el-table>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </el-collapse-item>
+                </el-collapse>
             </el-card>
         </el-main>
     </el-container>
