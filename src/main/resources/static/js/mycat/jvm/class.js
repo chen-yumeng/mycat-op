@@ -54,7 +54,7 @@ let app = new Vue({
                                 for (i = -19; i <= 0; i += 1) {
                                     data.push({
                                         x: time + i * 1000,
-                                        y: Math.random()
+                                        y: 0
                                     });
                                 }
                                 return data;
@@ -140,6 +140,7 @@ let app = new Vue({
         },
     },
 });
+var a = "个";
 Highcharts.setOptions({
     chart: {
         type: "spline",
@@ -181,7 +182,7 @@ Highcharts.setOptions({
     },
     tooltip: {
         formatter: function () {
-            return "<b>" + this.series.name + "</b><br/>" + Highcharts.dateFormat("%Y-%m-%d %H:%M:%S", this.x) + "<br/>" + Highcharts.numberFormat(this.y, 2) + "Mb";
+            return "<b>" + this.series.name + "</b><br/>" + Highcharts.dateFormat("%Y-%m-%d %H:%M:%S", this.x) + "<br/>" + Highcharts.numberFormat(this.y, 2) + "个";
         }
     },
 });
