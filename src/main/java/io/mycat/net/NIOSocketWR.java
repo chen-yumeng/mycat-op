@@ -1,7 +1,7 @@
 package io.mycat.net;
 
 import io.mycat.MycatServer;
-import io.mycat.config.FlowCotrollerConfig;
+import io.mycat.config.FlowControllerConfig;
 import io.mycat.config.model.SystemConfig;
 import io.mycat.util.TimeUtil;
 import org.slf4j.Logger;
@@ -181,7 +181,7 @@ public class NIOSocketWR extends SocketWR {
      */
     private int checkWriteQueueSize(int writeQueueSizeCount) {
         SystemConfig systemConfig = MycatServer.getInstance().getConfig().getSystem();
-        FlowCotrollerConfig config = new FlowCotrollerConfig(systemConfig.isEnableFlowControl(),systemConfig.getFlowControlStartMaxValue(),systemConfig.getFlowControlStopMaxValue());
+        FlowControllerConfig config = new FlowControllerConfig(systemConfig.isEnableFlowControl(),systemConfig.getFlowControlStartMaxValue(),systemConfig.getFlowControlStopMaxValue());
         // 如果配置了开启流式查询控制则进行检查，否则不作处理
         if (config.isEnableFlowControl()) {
             if ((writeQueueSizeCount != -1) && (writeQueueSizeCount <= config.getStop())) {

@@ -28,7 +28,7 @@ import io.mycat.backend.BackendConnection;
 import io.mycat.backend.datasource.PhysicalDBNode;
 import io.mycat.backend.mysql.LoadDataUtil;
 import io.mycat.cache.LayerCachePool;
-import io.mycat.config.FlowCotrollerConfig;
+import io.mycat.config.FlowControllerConfig;
 import io.mycat.config.MycatConfig;
 import io.mycat.config.model.SystemConfig;
 import io.mycat.memory.unsafe.row.UnsafeRow;
@@ -843,7 +843,7 @@ public class MultiNodeQueryHandler extends MultiNodeHandler implements LoadDataR
         }
 
         SystemConfig systemConfig = MycatServer.getInstance().getConfig().getSystem();
-        FlowCotrollerConfig flowConfig = new FlowCotrollerConfig(systemConfig.isEnableFlowControl(),systemConfig.getFlowControlStartMaxValue(),systemConfig.getFlowControlStopMaxValue());
+        FlowControllerConfig flowConfig = new FlowControllerConfig(systemConfig.isEnableFlowControl(),systemConfig.getFlowControlStartMaxValue(),systemConfig.getFlowControlStopMaxValue());
         // 当配置了开启流式查询并且达到开启的最大值时启动流式查询控制
         if (flowConfig.isEnableFlowControl() && session.getSource().getWriteQueue().size() > flowConfig.getStart()) {
             session.getSource().startFlowControl(conn);
