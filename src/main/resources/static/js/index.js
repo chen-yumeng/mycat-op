@@ -8,6 +8,7 @@ var app = new Vue({
         MycatFirewallConfig: [],
         blackList: [],
         dataNodes: [],
+        schemaCount : 0,
         memory: null,
         loading: true,
     },
@@ -33,6 +34,7 @@ var app = new Vue({
             this.getTime();
             this.getFirewall();
             this.getDataNodes();
+            this.getSchema();
             this.getMemory();
             this.loading = false;
         },
@@ -48,6 +50,11 @@ var app = new Vue({
                     this.memory = (response.body.data.used / 1024 / 1024).toFixed(2);
                 }
             })
+        },
+        getSchema() {
+            this.$http.get(api.mycat.properties.schema.getMycatSchemaConfig).then(res => {
+                this.schemaCount = Object.entries(res.body.data).length;
+            });
         },
         getDataNodes() {
             this.$http.get(api.mycat.properties.schema.getMycatDataNodesConfig).then(res => {
