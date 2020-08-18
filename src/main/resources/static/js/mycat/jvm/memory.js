@@ -40,7 +40,7 @@ let app = new Vue({
                                                 this._notify(response.body.data, 'error')
                                             }
                                         })
-                                    }, 6e3);
+                                    }, 1e3);
                                 }
                             }
                         },
@@ -79,7 +79,7 @@ let app = new Vue({
                                                 this._notify(response.body.data, 'error')
                                             }
                                         })
-                                    }, 6e3);
+                                    }, 1e3);
                                 }
                             }
                         },
@@ -118,7 +118,7 @@ let app = new Vue({
                                                 this._notify(response.body.data, 'error')
                                             }
                                         })
-                                    }, 6e3);
+                                    }, 1e3);
                                 }
                             }
                         },
@@ -157,7 +157,7 @@ let app = new Vue({
                                                 this._notify(response.body.data, 'error')
                                             }
                                         })
-                                    }, 6e3);
+                                    }, 1e3);
                                 }
                             }
                         },
@@ -244,7 +244,7 @@ let app = new Vue({
                                                 this._notify(response.body.data, 'error')
                                             }
                                         })
-                                    }, 6e3);
+                                    }, 1e3);
                                 }
                             }
                         },
@@ -293,7 +293,7 @@ let app = new Vue({
                                                 this._notify(response.body.data, 'error')
                                             }
                                         })
-                                    }, 6e3);
+                                    }, 1e3);
                                 }
                             }
                         },
