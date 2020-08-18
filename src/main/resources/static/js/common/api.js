@@ -40,6 +40,9 @@ let api = {
                 deleWhiteHostMaskItem: '/mycat/properties/server/deleWhiteHostMaskItem',
                 deleBlackItem: '/mycat/properties/server/deleBlackItem',
                 editMycatSystemConfig: '/mycat/properties/server/editMycatSystemConfig',
+                deleUserItem: '/mycat/properties/server/deleUserItem',
+                addUserItem: '/mycat/properties/server/addUserItem',
+                editUserItem: '/mycat/properties/server/editUserItem',
             },
             schema: {
                 getMycatSchemaConfig: '/mycat/properties/schema/getMycatSchemaConfig',

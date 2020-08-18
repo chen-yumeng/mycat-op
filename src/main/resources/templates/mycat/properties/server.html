@@ -4,6 +4,11 @@
     <meta charset="utf-8">
     <title>Mycat | server配置</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
+    <style>
+        .el-table tbody tr:hover>td {
+            background-color:#ffffff!important
+        }
+    </style>
     <div th:replace="common/css"></div>
 </head>
 <body>
@@ -16,10 +21,185 @@
         <!-- header -->
         <div style="background-color: rgb(84, 92, 100);" th:replace="common/header"></div>
 
+        <!-- 节点权限对话框 -->
+        <el-dialog title="添加/编辑节点权限" :visible.sync="dataNodePrivilegesDialog" :before-close="handleCloseInnerDataNode" append-to-body width="40%">
+            <el-select v-model="dataNodePrivileges.name" clearable placeholder="请选择逻辑库(请先选择所管理的逻辑库)">
+                <el-option v-for="item in dataNodes" :key="item" :label="item.name" :value="item.name" :disabled="item.disabled">
+                </el-option>
+            </el-select>
+            <el-select v-if="dataNodePrivileges.dmlName===undefined||schemaPrivileges.dmlName==''" multiple  clearable v-model="dataNodePrivileges.dml" placeholder="请选择DML">
+                <el-option v-for="item in dmlList" :key="item" :label="item" :value="item" :disabled="item.disabled">
+                </el-option>
+            </el-select>
+            <el-select v-else v-model="dataNodePrivileges.dmlName" multiple clearable placeholder="请选择DML">
+                <el-option v-for="item in dmlList" :key="item" :label="item" :value="item" :disabled="item.disabled">
+                </el-option>
+            </el-select>
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="handleCloseInnerDataNode">取 消</el-button>
+                <el-button type="primary" @click="saveDataNodePrivileges()">确 定</el-button>
+            </div>
+        </el-dialog>
+
+        <!-- 添加/编辑用户对话框 -->
+        <el-dialog title="添加/编辑用户" :visible.sync="dialogFormVisible" :inline="true" :before-close="handleClose">
+            <!-- 逻辑库权限对话框 -->
+            <el-dialog title="添加/编辑库权限" :visible.sync="schemaPrivilegesDialog" :before-close="handleCloseInnerSchema" append-to-body width="80%">
+                <el-select v-model="schemaPrivileges.name" clearable placeholder="请选择逻辑库(请先选择所管理的逻辑库)">
+                    <el-option v-for="item in userForm.schemas" :key="item" :label="item" :value="item" :disabled="item.disabled">
+                    </el-option>
+                </el-select>
+                <el-select v-if="schemaPrivileges.dmlName===undefined||schemaPrivileges.dmlName==''" clearable multiple  v-model="schemaPrivileges.dml" placeholder="请选择DML">
+                    <el-option v-for="item in dmlList" :key="item" :label="item" :value="item" :disabled="item.disabled">
+                    </el-option>
+                </el-select>
+                <el-select v-else v-model="schemaPrivileges.dmlName" multiple clearable placeholder="请选择DML">
+                    <el-option v-for="item in dmlList" :key="item" :label="item" :value="item" :disabled="item.disabled">
+                    </el-option>
+                </el-select>
+                <el-table :data="schemaPrivileges.tablePrivileges" style="width: 100%">
+                    <el-table-column label="逻辑表" prop="name">
+                    </el-table-column>
+                    <el-table-column label="DML" prop="dml">
+                        <template slot-scope="scope">
+                            <div v-if="scope.row.dmlName===undefined">
+                                <span v-for="n in scope.row.dml">{{ n }} </span>
+                            </div>
+                            <div v-else>
+                                {{scope.row.dmlName}}
+                            </div>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作">
+                        <template slot-scope="scope">
+                            <el-button size="mini" @click="tablePrivilegesDialog=true,tablePrivileges=scope.row,editTablePrivileges=scope.row.name">编辑</el-button>
+                            <el-button size="mini" type="danger" @click="deleteTablePrivileges(scope.row.name)">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+                <el-button type="primary" @click="addPrivileges(2)" >添加表权限</el-button>
+                <div slot="footer" class="dialog-footer">
+                    <el-button @click="handleCloseInnerSchema">取 消</el-button>
+                    <el-button type="primary" @click="saveSchemaPrivileges()">确 定</el-button>
+                </div>
+                <!-- 逻辑表权限对话框 -->
+                <el-dialog title="添加表权限" :visible.sync="tablePrivilegesDialog" @open="tablePrivilegesDialogOpen" :before-close="handleCloseTableInner" append-to-body width="50%">
+                    <el-select v-model="tablePrivileges.name" clearable placeholder="请选择逻辑表">
+                        <el-option v-for="item in tables" :key="item.name" :label="item.name" :value="item.name" :disabled="item.disabled">
+                        </el-option>
+                    </el-select>
+                    <el-select v-if="tablePrivileges.dmlName===undefined||schemaPrivileges.dmlName==''" clearable multiple  v-model="tablePrivileges.dml" placeholder="请选择DML">
+                        <el-option v-for="item in dmlList" :key="item" :label="item" :value="item" :disabled="item.disabled">
+                        </el-option>
+                    </el-select>
+                    <el-select v-else v-model="tablePrivileges.dmlName" clearable multiple  placeholder="请选择DML">
+                        <el-option v-for="item in dmlList" :key="item" :label="item" :value="item" :disabled="item.disabled">
+                        </el-option>
+                    </el-select>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="handleCloseTableInner()">取 消</el-button>
+                        <el-button type="primary" @click="saveTablePrivileges()">确 定</el-button>
+                    </div>
+                </el-dialog>
+            </el-dialog>
+            <el-form :model="userForm">
+                <el-form-item label="用户名">
+                    <el-input v-model="userForm.name" autocomplete="off" placeholder="请输入用户名"></el-input>
+                </el-form-item>
+                <el-form-item label="密码">
+                    <el-input v-model="userForm.password" type="password" placeholder="请输入密码" autocomplete="off"></el-input>
+                </el-form-item>
+                <el-form-item label="负载限制(默认0表示不限制)">
+                    <el-input v-model="userForm.benchmark" autocomplete="off" placeholder="负载限制, 默认0表示不限制"></el-input>
+                </el-form-item>
+                <el-form-item label="是否为无密码登陆的默认账户">
+                    <el-switch v-model="userForm.defaultAccount"></el-switch>
+                </el-form-item>
+                <el-form-item label="是否只读">
+                    <el-switch v-model="userForm.readOnly"></el-switch>
+                </el-form-item>
+                <el-form-item label="所管理的逻辑库">
+                    <el-select v-model="userForm.schemas" clearable multiple placeholder="请选择逻辑库">
+                        <el-option v-for="schema in schemas" :label="schema.name" :value="schema.name"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="用户sql权限">
+                    <el-switch v-model="userForm.privilegesConfig.check"></el-switch>
+                    <div v-if="userForm.privilegesConfig.check">
+                        <el-table :data="userForm.privilegesConfig.schemaPrivileges" style="width: 100%">
+                            <el-table-column label="逻辑库" prop="name">
+                            </el-table-column>
+                            <el-table-column label="DML" prop="dml">
+                                <template slot-scope="scope">
+                                    <div v-if="scope.row.dmlName===undefined">
+                                        <span v-for="n in scope.row.dml">{{ n }} </span>
+                                    </div>
+                                    <div v-else>
+                                        {{scope.row.dmlName}}
+                                    </div>
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="逻辑表" prop="tablePrivileges" width="200px">
+                                <template slot-scope="scope">
+                                    <el-table :data="scope.row.tablePrivileges" style="width: 100%">
+                                        <el-table-column label="逻辑表" prop="name">
+                                        </el-table-column>
+                                        <el-table-column label="DML" prop="dml">
+                                            <template slot-scope="scope">
+                                                <div v-if="scope.row.dmlName===undefined">
+                                                    <span v-for="n in scope.row.dml">{{ n }} </span>
+                                                </div>
+                                                <div v-else>
+                                                    {{scope.row.dmlName}}
+                                                </div>
+                                            </template>
+                                        </el-table-column>
+                                    </el-table>
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="操作">
+                                <template slot-scope="scope">
+                                    <el-button size="mini" @click="schemaPrivilegesDialog=true,schemaPrivileges=scope.row,editSchemaPrivileges=scope.row.name">编辑</el-button>
+                                    <el-button size="mini" type="danger" @click="deleteSchemaPrivileges(scope.row.name)">删除</el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                        <el-button type="primary" @click="addPrivileges(1)" >添加逻辑库权限</el-button>
+
+                        <el-table :data="userForm.privilegesConfig.dataNodePrivileges" style="width: 100%">
+                            <el-table-column label="逻辑节点" prop="name">
+                            </el-table-column>
+                            <el-table-column label="DML" prop="dml">
+                                <template slot-scope="scope">
+                                    <div v-if="scope.row.dmlName===undefined">
+                                        <span v-for="n in scope.row.dml">{{ n }} </span>
+                                    </div>
+                                    <div v-else>
+                                        {{scope.row.dmlName}}
+                                    </div>
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="操作">
+                                <template slot-scope="scope">
+                                    <el-button size="mini" @click="dataNodePrivilegesDialog=true,dataNodePrivileges=scope.row,editDataNodePrivileges=scope.row.name">编辑</el-button>
+                                    <el-button size="mini" type="danger" @click="deleteDataNodePrivileges(scope.row.name)">删除</el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                        <el-button type="primary" @click="dataNodePrivilegesDialog=true" >添加节点权限</el-button>
+                    </div>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="handleClose">取 消</el-button>
+                <el-button type="primary" @click="saveUser()">确 定</el-button>
+            </div>
+        </el-dialog>
+
         <!-- main -->
         <el-main class="app-main">
             <el-card>
-                <el-divider content-position="left"><h3>一切以server.xml为主，在此修改过的重启后将实现，如需永久修改请在server.xml进行修改</h3>
+                <el-divider content-position="left"><h3>Mycat server.xml配置数据</h3>
                 </el-divider>
             </el-card>
             <el-collapse accordion>
@@ -50,8 +230,17 @@
                 <el-collapse-item title="user配置" name="3">
                     <el-card>
                         <el-divider content-position="left"><h3>Mycat user配置</h3></el-divider>
+                        <br>
+                        <el-button type="primary" @click="dialogFormVisible=true">添加用户</el-button>
+                        <br>
+                        <br>
                         <el-collapse accordion>
                             <el-collapse-item v-for="user in users" :title="'用户'+user.key+'的配置'" :name="user.key">
+                                <br>
+                                <el-button type="primary" @click="dialogFormVisible=true,editUser(user.key)">编辑用户</el-button>
+                                <el-button type="danger" @click="deleteUser(user.key)">删除用户</el-button>
+                                <br>
+                                <br>
                                 <el-table :data="user.value" size="small" v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border>
                                     <el-table-column prop="key" label="参数名称">
                                         <template slot-scope="scope">
@@ -61,7 +250,120 @@
                                     </el-table-column>
                                     <el-table-column label="参数值">
                                         <template slot-scope="scope">
-                                            {{scope.row.value}}
+                                            <div v-if="scope.row.key=='privilegesConfig'">
+                                                <table style="width: 100%;">
+                                                    <tbody>
+                                                        <tr>
+                                                            <td style="width: 150px">check</td>
+                                                            <td>{{scope.row.value.check}}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>schemaPrivileges</td>
+                                                            <td>
+                                                                <div v-if="scope.row.value.schemaPrivileges.length==0">
+                                                                    无
+                                                                </div>
+                                                                <div v-else>
+                                                                    <el-collapse accordion>
+                                                                        <el-collapse-item v-for="schema in scope.row.value.schemaPrivileges" :title="schema.name+'的权限'" :name="schema.name">
+                                                                            <table width="100%">
+                                                                                <thead>
+                                                                                <tr>
+                                                                                    <th style="text-align: center;">名称</th>
+                                                                                    <th style="text-align: center;">DML</th>
+                                                                                </tr>
+                                                                                </thead>
+                                                                                <tbody>
+                                                                                <tr>
+                                                                                    <td style="text-align: center;">{{schema.name}}</td>
+                                                                                    <td style="text-align: center;">
+                                                                                        <div v-if="schema.dmlName===''">
+                                                                                            <span v-for="n in schema.dml">{{ n }} </span>
+                                                                                        </div>
+                                                                                        <div v-else>
+                                                                                            {{schema.dmlName}}
+                                                                                        </div>
+                                                                                    </td>
+                                                                                </tr>
+                                                                                <tr>
+                                                                                    <td>表权限</td>
+                                                                                    <td></td>
+                                                                                </tr>
+                                                                                <tr>
+                                                                                    <th style="text-align: center;color: #909399;">名称</th>
+                                                                                    <th style="text-align: center;color: #909399;">DML</th>
+                                                                                </tr>
+                                                                                <tr v-for="table in schema.tablePrivileges">
+                                                                                    <td style="text-align: center;">{{table.name}}</td>
+                                                                                    <td style="text-align: center;">
+                                                                                        <div v-if="schema.dmlName===''">
+                                                                                            <span v-for="n in schema.dml">{{ n }} </span>
+                                                                                        </div>
+                                                                                        <div v-else>
+                                                                                            {{schema.dmlName}}
+                                                                                        </div>
+                                                                                    </td>
+                                                                                </tr>
+                                                                                </tbody>
+                                                                            </table>
+                                                                        </el-collapse-item>
+                                                                    </el-collapse>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>dataNodePrivileges</td>
+                                                            <td>
+                                                                <div v-if="scope.row.value.dataNodePrivileges.length==0">
+                                                                    无
+                                                                </div>
+                                                                <div v-else>
+                                                                    <el-collapse accordion>
+                                                                        <el-collapse-item v-for="dataNode in scope.row.value.dataNodePrivileges" :title="dataNode.name+'的权限'" :name="dataNode.name">
+                                                                            <table width="100%">
+                                                                                <thead>
+                                                                                <tr>
+                                                                                    <th style="text-align: center;">名称</th>
+                                                                                    <th style="text-align: center;">DML</th>
+                                                                                </tr>
+                                                                                </thead>
+                                                                                <tbody>
+                                                                                <tr>
+                                                                                    <td style="text-align: center;">{{dataNode.name}}</td>
+                                                                                    <td style="text-align: center;">
+                                                                                        <div v-if="dataNode.dmlName===''">
+                                                                                            <span v-for="n in dataNode.dml">{{ n }} </span>
+                                                                                        </div>
+                                                                                        <div v-else>
+                                                                                            {{dataNode.dmlName}}
+                                                                                        </div>
+                                                                                    </td>
+                                                                                </tr>
+                                                                                </tbody>
+                                                                            </table>
+                                                                        </el-collapse-item>
+                                                                    </el-collapse>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <div v-else-if="scope.row.key=='defaultSchema'">
+                                                {{JSON.stringify(scope.row.value)=='null'? '无':scope.row.value}}
+                                            </div>
+                                            <div v-else-if="scope.row.key=='schemas'">
+                                                <el-tag v-for="item in scope.row.value" :key="item" effect="plain">
+                                                    {{item}}
+                                                </el-tag>
+                                            </div>
+                                            <div v-else-if="scope.row.key=='defaultAccount'||scope.row.key=='readOnly'">
+                                                <el-switch v-model="scope.row.value" disabled>
+                                                </el-switch>
+                                            </div>
+                                            <div v-else>
+                                                {{scope.row.value}}
+                                            </div>
                                         </template>
                                     </el-table-column>
                                 </el-table>

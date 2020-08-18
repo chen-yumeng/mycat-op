@@ -18,30 +18,36 @@
         <div style="background-color: rgb(84, 92, 100);" th:replace="common/header"></div>
         <!-- main -->
         <el-main class="app-main">
-            <el-card>
-                <el-divider content-position="left"><h3>Mycat基础数据</h3></el-divider>
-                <ul style="line-height: 26px;">
-                    <li><b>主机：</b>{{data.host}}</li>
-                    <li><b>JVM：</b>{{data.jvm}}</li>
-                    <li><b>JDK路径：</b>{{data.home}}</li>
-                    <li><b>Mycat启动时间：</b>{{dateFormat(data.startTime)}}</li>
-                    <li><b>启动参数：</b>
-                        <div v-for="arg in data.args">&nbsp;&nbsp;&nbsp;&nbsp;{{arg}}</div>
-                    </li>
-                </ul>
-                <br/>
-                <el-divider content-position="left"><h3>Mycat详细数据</h3></el-divider>
-                <!-- 列表 -->
-                <el-table :data="MycatSystemConfig" size="small" v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border fit highlight-current-row>
-                    <el-table-column prop="key" label="参数名称" width="280"></el-table-column>
-                    <el-table-column label="参数值">
-                        <template slot-scope="scope">
-                            <span v-html="strFormat(scope.row.value)"></span>
-                        </template>
-                    </el-table-column>
-                </el-table>
-                <br/>
-            </el-card>
+            <el-row :gutter="12">
+                <el-col :span="14">
+                    <el-card>
+                        <el-divider content-position="left"><h3>Mycat基础数据</h3></el-divider>
+                        <ul style="line-height: 26px;">
+                            <li><b>主机：</b>{{data.host}}</li>
+                            <li><b>JVM：</b>{{data.jvm}}</li>
+                            <li><b>JDK路径：</b>{{data.home}}</li>
+                            <li><b>Mycat启动时间：</b>{{dateFormat(data.startTime)}}</li>
+                            <li><b>启动参数：</b>
+                                <div v-for="arg in data.args">{{arg}}</div>
+                            </li>
+                        </ul>
+                    </el-card>
+                </el-col>
+                <el-col :span="10">
+                    <el-card>
+                        <el-divider content-position="left"><h3>Mycat详细数据</h3></el-divider>
+                        <!-- 列表 -->
+                        <el-table :data="MycatSystemConfig" size="small" v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" border fit highlight-current-row>
+                            <el-table-column prop="key" label="参数名称" width="280"></el-table-column>
+                            <el-table-column label="参数值">
+                                <template slot-scope="scope">
+                                    <span v-html="strFormat(scope.row.value)"></span>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </el-card>
+                </el-col>
+            </el-row>
         </el-main>
     </el-container>
 </div>

@@ -17,6 +17,31 @@ let app = new Vue({
         isAddWhiteHost: false,
         addWhiteHostMask: {},
         isAddWhiteHostMask: false,
+        dialogFormVisible: false,
+        userForm: {
+            privilegesConfig: {
+                check: false,
+                schemaPrivileges: [],
+                dataNodePrivileges: []
+            }
+        },
+        editUserKey: '',
+        schemas: [],
+        schemaPrivilegesDialog: false,
+        schemaPrivileges: {
+            tablePrivileges: []
+        },
+        editSchemaPrivileges: '',
+        schemaName: '',
+        tables: [],
+        tablePrivilegesDialog: false,
+        tablePrivileges: {},
+        editTablePrivileges: '',
+        dataNodePrivilegesDialog: false,
+        dataNodePrivileges: {},
+        editDataNodePrivileges: "",
+        dataNodes: [],
+        dmlList: ["insert", "update", "select", "delete"]
     },
     created() {
         this.init(); //初始化
@@ -33,6 +58,230 @@ let app = new Vue({
             this.getConfig();
             this.getUsers();
             this.getFirewall();
+            this.getSchemasAndTablesAndDataNode()
+        },
+        getSchemasAndTablesAndDataNode() {
+            this.$http.get(api.mycat.properties.schema.getMycatSchemaConfig).then(res => {
+                let arr = Object.entries(res.data.data);
+                for (let i = 0; i < arr.length; i++) {
+                    let tabArr = Object.entries(arr[i][1].tables);
+                    let tables = []
+                    for (let j = 0; j < tabArr.length; j++) {
+                        tables.push(tabArr[j][1])
+                    }
+                    arr[i][1].tableList = tables
+                    this.schemas.push(arr[i][1]);
+                }
+            })
+            this.$http.get(api.mycat.properties.schema.getMycatDataNodesConfig).then(res => {
+                this.dataNodes = res.data.data
+            })
+        },
+        addPrivileges(index) {
+            // 1逻辑库 2逻辑表
+            if (index == 1) {
+                if (this.userForm.schemas.length === 0) {
+                    this.$message({message: '请先选择逻辑库!', type: 'error'});
+                    return;
+                }
+                this.schemaPrivilegesDialog = true
+            } else {
+                if (this.schemaPrivileges.name === undefined) {
+                    this.$message({message: '请先选择逻辑库!', type: 'error'});
+                    return;
+                }
+                this.tablePrivilegesDialog = true
+                this.schemaName = this.schemaPrivileges.name
+            }
+        },
+        tablePrivilegesDialogOpen() {
+            for (let i = 0; i < this.schemas.length; i++) {
+                if (this.schemas[i].name === this.schemaName) {
+                    this.tables = this.schemas[i].tableList
+                }
+            }
+        },
+        saveDataNodePrivileges() {
+            if (this.editDataNodePrivileges === '') {
+                this.userForm.privilegesConfig.dataNodePrivileges.push(this.dataNodePrivileges)
+            }
+            this.handleCloseInnerDataNode()
+        },
+        saveTablePrivileges() {
+            if (this.editTablePrivileges === '') {
+                this.schemaPrivileges.tablePrivileges.push(this.tablePrivileges)
+            }
+            this.handleCloseTableInner()
+        },
+        saveSchemaPrivileges() {
+            if (this.editSchemaPrivileges === '') {
+                this.userForm.privilegesConfig.schemaPrivileges.push(this.schemaPrivileges)
+            }
+            this.handleCloseInnerSchema()
+        },
+        deleteTablePrivileges(name) {
+            for (let i = 0; i < this.schemaPrivileges.tablePrivileges.length; i++) {
+                if (this.schemaPrivileges.tablePrivileges[i].name == name) {
+                    this.schemaPrivileges.tablePrivileges.splice(i, 1)
+                }
+            }
+        },
+        deleteSchemaPrivileges(name) {
+            for (let i = 0; i < this.userForm.privilegesConfig.schemaPrivileges.length; i++) {
+                if (this.userForm.privilegesConfig.schemaPrivileges[i].name == name) {
+                    this.userForm.privilegesConfig.schemaPrivileges.splice(i, 1)
+                }
+            }
+        },
+        deleteDataNodePrivileges(name) {
+            for (let i = 0; i < this.userForm.privilegesConfig.dataNodePrivileges.length; i++) {
+                if (this.userForm.privilegesConfig.dataNodePrivileges[i].name == name) {
+                    this.userForm.privilegesConfig.dataNodePrivileges.splice(i, 1)
+                }
+            }
+        },
+        handleCloseInnerDataNode() {
+            this.dataNodePrivilegesDialog = false
+            this.editDataNodePrivileges = ''
+            this.dataNodePrivileges = {}
+        },
+        handleCloseTableInner() {
+            this.tablePrivilegesDialog = false
+            this.editTablePrivileges = ''
+            this.schemaName = ''
+            this.tablePrivileges = {}
+        },
+        handleCloseInnerSchema() {
+            this.schemaPrivilegesDialog = false
+            this.editSchemaPrivileges = ''
+            this.schemaPrivileges = {tablePrivileges: []}
+        },
+        handleClose() {
+            this.editUserKey = ''
+            this.dialogFormVisible = false
+            this.userForm = {privilegesConfig: {check: false, schemaPrivileges: [], dataNodePrivileges: []}}
+        },
+        editUser(key) {
+            this.editUserKey = key
+            this.$http.get(api.mycat.properties.server.getMycatUsersConfig).then(res => {
+                this.userForm = res.data.data[key]
+                this.filterPrivilegesConfig(this.userForm.privilegesConfig)
+            })
+        },
+        saveUser() {
+            let config = {
+                name:this.userForm.name,
+                password: this.userForm.password,
+                encryptPassword: this.userForm.password,
+                benchmark: this.userForm.benchmark,
+                defaultSchema: this.userForm.defaultSchema,
+                defaultAccount: this.userForm.defaultAccount,
+                readOnly: this.userForm.readOnly,
+                schemas: this.userForm.schemas,
+                privilegesConfig: {
+                    check: this.userForm.privilegesConfig.check,
+                    schemaPrivileges: {
+                    },
+                    dataNodePrivileges: {
+                    }
+                }
+            }
+            for (let i = 0; i < this.userForm.privilegesConfig.schemaPrivileges.length; i++) {
+                let schemaKey = this.userForm.privilegesConfig.schemaPrivileges[i].name
+                config.privilegesConfig.schemaPrivileges[schemaKey] = {}
+                config.privilegesConfig.schemaPrivileges[schemaKey].dmlList = this.userForm.privilegesConfig.schemaPrivileges[i].dml
+                config.privilegesConfig.schemaPrivileges[schemaKey].name = schemaKey
+                config.privilegesConfig.schemaPrivileges[schemaKey].tablePrivileges = {}
+                for (let j = 0; j < this.userForm.privilegesConfig.schemaPrivileges[i].tablePrivileges.length; j++) {
+                    let tableKey = this.userForm.privilegesConfig.schemaPrivileges[i].tablePrivileges[j].name
+                    config.privilegesConfig.schemaPrivileges[schemaKey].tablePrivileges[tableKey] = {}
+                    config.privilegesConfig.schemaPrivileges[schemaKey].tablePrivileges[tableKey].dmlList = this.userForm.privilegesConfig.schemaPrivileges[i].tablePrivileges[j].dml
+                    config.privilegesConfig.schemaPrivileges[schemaKey].tablePrivileges[tableKey].name = tableKey
+                }
+            }
+            for (let i = 0; i < this.userForm.privilegesConfig.dataNodePrivileges.length; i++) {
+                let dataNodeKey = this.userForm.privilegesConfig.dataNodePrivileges[i].name
+                config.privilegesConfig.dataNodePrivileges[dataNodeKey] = {}
+                config.privilegesConfig.dataNodePrivileges[dataNodeKey].name = dataNodeKey
+                config.privilegesConfig.dataNodePrivileges[dataNodeKey].dmlList = this.userForm.privilegesConfig.dataNodePrivileges[i].dml
+            }
+            // 保存
+            if (this.editUserKey==='') {
+                this.$http.post(api.mycat.properties.server.addUserItem, {config:JSON.stringify(config)}).then(res => {
+                    if (res.data.code === 200) {
+                        this.$message({
+                            type: "success",
+                            message: "添加成功"
+                        })
+                    } else {
+                        this.$message({
+                            type: "error",
+                            message: "添加失败"
+                        })
+                    }
+                })
+            } else {
+            //  修改
+                this.$http.post(api.mycat.properties.server.editUserItem, {config: JSON.stringify(config),oldName:this.editUserKey}).then(res => {
+                    if (res.data.code === 200) {
+                        this.$message({
+                            type: "success",
+                            message: "修改成功"
+                        })
+                    } else {
+                        this.$message({
+                            type: "error",
+                            message: "修改失败"
+                        })
+                    }
+                })
+            }
+            this.users = []
+            this.getUsers()
+            this.handleClose()
+        },
+        deleteUser(key) {
+            const h = this.$createElement;
+            this.$msgbox({
+                title: '消息',
+                message: h('p', null, [
+                    h('span', null, "确认删除  "),
+                    h('b', {style: 'color: teal'}, key),
+                    h('span', null, '  的用户吗?')
+                ]),
+                showCancelButton: true,
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                beforeClose: (action, instance, done) => {
+                    if (action === 'confirm') {
+                        instance.confirmButtonLoading = true;
+                        instance.confirmButtonText = '执行中...';
+                        setTimeout(() => {
+                            done();
+                            setTimeout(() => {
+                                instance.confirmButtonLoading = false;
+                            }, 300);
+                            this.$http.get(api.mycat.properties.server.deleUserItem + '?key=' + key).then(res => {
+                                if (res.body.code == 200 && res.body.data) {
+                                    this.$message({
+                                        message: '删除成功!',
+                                        type: 'success'
+                                    });
+                                } else {
+                                    this.$message({
+                                        message: '删除失败!',
+                                        type: 'error'
+                                    });
+                                }
+                                this.users = []
+                                this.getUsers()
+                            })
+                        }, 3000);
+                    } else {
+                        done();
+                    }
+                }
+            });
         },
         cheackIP(ip, index) {
             let re;
@@ -48,9 +297,9 @@ let app = new Vue({
                 whiteHostMask.key = whiteHostMask.key.replace(/\*/g, '[0-9]*').replace(/\./g, '\\\.');
                 return whiteHostMask;
             }
-            whiteHostMask.forEach(value => {
-                value.key = value.key.replace(/\[0-9\]\*/g, '*').replace(/\\\./g, '.');
-            });
+            for (let i = 0; i < whiteHostMask.length; i++) {
+                whiteHostMask[i].key = whiteHostMask[i].key.replace(/\[0-9\]\*/g, '*').replace(/\\\./g, '.');
+            }
         },
         editItem(item, index, i) {
             if (index == 3) {
@@ -127,6 +376,7 @@ let app = new Vue({
                                                 type: 'error'
                                             });
                                         }
+                                        this.getConfig()
                                     });
                                     break;
                                 case 1:
@@ -147,6 +397,7 @@ let app = new Vue({
                                                 type: 'error'
                                             });
                                         }
+                                        this.getFirewall();
                                     });
                                     break;
                                 case 2:
@@ -168,6 +419,7 @@ let app = new Vue({
                                                 type: 'error'
                                             });
                                         }
+                                        this.getFirewall();
                                     });
                                     break;
                                 case 3:
@@ -186,10 +438,10 @@ let app = new Vue({
                                                 type: 'error'
                                             });
                                         }
+                                        this.getFirewall();
                                     });
                                     break;
                             }
-                            this.getFirewall();
                         }, 3000);
                     } else {
                         done();
@@ -234,6 +486,7 @@ let app = new Vue({
                                                 type: 'error'
                                             });
                                         }
+                                        this.getFirewall();
                                     });
                                     break;
                                 case 2:
@@ -252,6 +505,7 @@ let app = new Vue({
                                                 type: 'error'
                                             });
                                         }
+                                        this.getFirewall();
                                     });
                                     this.getFirewall();
                                     break;
@@ -271,10 +525,10 @@ let app = new Vue({
                                                 type: 'error'
                                             });
                                         }
+                                        this.getFirewall();
                                     });
                                     break;
                             }
-                            this.getFirewall();
                         }, 3000);
                     } else {
                         done();
@@ -361,6 +615,7 @@ let app = new Vue({
                                                 type: 'error'
                                             });
                                         }
+                                        this.getFirewall();
                                         this.addWhiteHost = {};
                                         this.isAddWhiteHost = false;
                                     });
@@ -382,6 +637,7 @@ let app = new Vue({
                                                 type: 'error'
                                             });
                                         }
+                                        this.getFirewall();
                                         this.addWhiteHostMask = {};
                                         this.isAddWhiteHostMask = false;
                                     });
@@ -402,12 +658,12 @@ let app = new Vue({
                                                 type: 'error'
                                             });
                                         }
+                                        this.getFirewall();
                                         this.addBlackItem = {};
                                         this.isAddBlackItem = false;
                                     });
                                     break;
                             }
-                            this.getFirewall();
                         }, 3000);
                     } else {
                         done();
@@ -454,9 +710,9 @@ let app = new Vue({
                     let names = [];
                     let item = entries[i][1];
                     if (item instanceof Array) {
-                        item.forEach(value => {
-                            names.push(value.name);
-                        });
+                        for (let j = 0; j < item.length; j++) {
+                            names.push(item[i].name)
+                        }
                     }
                     arr.push({
                         key: entries[i][0],
@@ -483,7 +739,7 @@ let app = new Vue({
             u.push({
                 name: "用户sql权限配置",
                 key: "privilegesConfig",
-                value: JSON.stringify(user.privilegesConfig)
+                value: this.filterPrivilegesConfig(user.privilegesConfig)
             });
             u.push({
                 name: "负载限制, 默认0表示不限制",
@@ -496,19 +752,9 @@ let app = new Vue({
                 value: user.defaultAccount
             });
             u.push({
-                name: "加密密码",
-                key: "encryptPassword",
-                value: user.encryptPassword
-            });
-            u.push({
                 name: "是否只读",
                 key: "readOnly",
                 value: user.readOnly
-            });
-            u.push({
-                name: "默认所管理的逻辑库",
-                key: "defaultSchema",
-                value: user.defaultSchema
             });
             u.push({
                 name: "所管理的逻辑库",
@@ -516,6 +762,72 @@ let app = new Vue({
                 value: user.schemas
             });
             return u;
+        },
+        filterPrivilegesConfig(privilegesConfig) {
+            let schema = privilegesConfig.schemaPrivileges;
+            let dataNode = privilegesConfig.dataNodePrivileges;
+            this.filterDML(schema)
+            this.filterDML(dataNode)
+            for (let i = 0; i < schema.length; i++) {
+                this.filterDML(schema[i].tablePrivileges)
+            }
+            return privilegesConfig
+        },
+        filterDML(schema) {
+            let insert = [18, 23, 28, 14, 27, 29]
+            let update = [30, 25, 13, 10, 29, 14]
+            let select = [28, 14, 21, 14, 12, 29]
+            let deleteChar = [13, 14, 21, 14, 29, 14]
+            for (let i = 0; i < schema.length; i++) {
+                schema[i].dmlName = ''
+                if (schema[i].dml.length > 6) {
+                    schema[i].dml = this.group(schema[i].dml, 6)
+                    for (let j = 0; j < schema[i].dml.length; j++) {
+                        switch (schema[i].dml[j].toString()) {
+                            case select.toString():
+                                schema[i].dmlName += "select "
+                                break;
+                            case insert.toString():
+                                schema[i].dmlName += "insert "
+                                break;
+                            case update.toString():
+                                schema[i].dmlName += "update "
+                                break;
+                            case deleteChar.toString():
+                                schema[i].dmlName += "delete "
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                } else {
+                    switch (schema[i].dml.toString()) {
+                        case select.toString():
+                            schema[i].dmlName += "select "
+                            break;
+                        case insert.toString():
+                            schema[i].dmlName += "insert "
+                            break;
+                        case update.toString():
+                            schema[i].dmlName += "update "
+                            break;
+                        case deleteChar.toString():
+                            schema[i].dmlName += "delete "
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+        },
+        group(array, subGroupLength) {
+            let index = 0;
+            let newArray = [];
+            while (index < array.length) {
+                newArray.push(array.slice(index, index += subGroupLength));
+                index+=1
+            }
+            return newArray;
         },
         filterSystem(config) {
             let mycat = [];

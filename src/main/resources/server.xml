@@ -123,12 +123,13 @@
 		<!--No MyCAT Database selected 错误前会尝试使用该schema作为schema，不设置则为null,报错 -->
 		
 		<!-- 表级 DML 权限设置 -->
+		<!-- insert、update、select、delete -->
 		<privileges check="true">
-			<schema name="TESTDB" dml="0110" >
-				<table name="tb01" dml="0000"></table>
-				<table name="tb02" dml="1111"></table>
+			<schema name="TESTDB" dml="select" >
+				<table name="SBTEST1" dml="update,select"></table>
 			</schema>
-		</privileges>		
+			<dataNode name="dn01" dml="delete"></dataNode>
+		</privileges>
 	</user>
 
 	<user name="user">

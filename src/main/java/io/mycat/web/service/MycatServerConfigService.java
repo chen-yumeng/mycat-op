@@ -3,17 +3,31 @@ package io.mycat.web.service;
 import io.mycat.config.model.FirewallConfig;
 import io.mycat.config.model.SystemConfig;
 import io.mycat.config.model.UserConfig;
+import io.mycat.web.entity.UserConfigDTO;
 
 import java.util.List;
 import java.util.Map;
 
 /**
- * @program: mycat->MycatConfigService
+ * @program: mycat->MycatServerConfigService
  * @description:
  * @author: cg
  * @create: 2020-06-13 17:09
  **/
-public interface MycatConfigService {
+public interface MycatServerConfigService {
+
+    /**
+     * 保存 Mycat 用户
+     * @param userConfig
+     * @param oldName 修改前的用户名
+     */
+    void saveUserItem(UserConfigDTO userConfig, String oldName);
+
+    /**
+     * 删除 Mycat 用户
+     * @param key
+     */
+    void deleUserItem(String key);
 
     /**
      * 获取Mycat server配置

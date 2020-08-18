@@ -139,6 +139,10 @@ public class MycatConfig {
         return users;
     }
 
+    public void setUsers(Map<String, UserConfig> users) {
+        this.users = users;
+    }
+
     public Map<String, UserConfig> getBackupUsers() {
         return _users;
     }
