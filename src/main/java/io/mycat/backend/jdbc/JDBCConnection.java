@@ -6,7 +6,9 @@ import io.mycat.backend.mysql.PacketUtil;
 import io.mycat.backend.mysql.nio.handler.ConnectionHeartBeatHandler;
 import io.mycat.backend.mysql.nio.handler.ResponseHandler;
 import io.mycat.config.ErrorCode;
+import io.mycat.config.FlowControllerConfig;
 import io.mycat.config.Isolations;
+import io.mycat.config.model.SystemConfig;
 import io.mycat.net.NIOProcessor;
 import io.mycat.net.mysql.*;
 import io.mycat.route.Procedure;
@@ -636,9 +638,10 @@ public class JDBCConnection implements BackendConnection {
         PreparedStatement stmt = null;
 
         try {
+            // 开启jdbc的流式查询
             stmt = con.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
             stmt.setFetchSize(Integer.MIN_VALUE);
-            //stmt = con.createStatement();
+
             if (sc.getSqlSelectLimit() > 0) {
                 stmt.setMaxRows(sc.getSqlSelectLimit());
             }
@@ -704,6 +707,16 @@ public class JDBCConnection implements BackendConnection {
                 byteBuf.get(row);
                 byteBuf.clear();
                 this.respHandler.rowResponse(row, this);
+                SystemConfig systemConfig = MycatServer.getInstance().getConfig().getSystem();
+                FlowControllerConfig flowConfig = new FlowControllerConfig(systemConfig.isEnableFlowControl(),systemConfig.getFlowControlStartMaxValue(),systemConfig.getFlowControlStopMaxValue());
+                // 循环判断当配置了开启流式查询并且达到开启的最大值时停止读取mysql数据一秒
+                while (flowConfig.isEnableFlowControl() && sc.getSession2().getSource().getWriteQueue().size() > flowConfig.getStart()) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
 
             fieldPks.clear();
